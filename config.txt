@@ -1,0 +1,7 @@
+DateiMitWebseiten=C:\Users\Gerald\Desktop\JKU\LVAs\Business Engineering and Management - Praktikum (257.300)\Marktrecherche_Tools\Webseiten.txt
+DateiMitBegriffen=C:\Users\Gerald\Desktop\JKU\LVAs\Business Engineering and Management - Praktikum (257.300)\Marktrecherche_Tools\WordCounter\Begriffe.xlsx
+AuswertungsDatenbank=C:\Users\Gerald\Desktop\JKU\LVAs\Business Engineering and Management - Praktikum (257.300)\Marktrecherche_Tools\Words.db
+InDatenbankSchreiben=Ja
+AuswertungsOrdner=C:\Users\Gerald\Desktop\JKU\LVAs\Business Engineering and Management - Praktikum (257.300)\Marktrecherche_Tools\Auswertungen
+AuszuwertenderOrdner=C:\HTTrack_Heruntergeladene_Webseiten\Testprojekt
+NullWerteInErgebnisMitaufnehmen=Ja
