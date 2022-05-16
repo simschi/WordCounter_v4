@@ -4,6 +4,7 @@ import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSpinner;
@@ -198,12 +199,14 @@ public class GUICountWords extends JFrame {
 
         panelDownloadWebsitesButtons.setLayout(new FlowLayout());
 
+        buttonStartHTTrack.addActionListener(new MyActionListener());
         panelDownloadWebsitesButtons.add(buttonStartHTTrack);
         panelDownloadWebsitesButtons.add(labelStartCycleIn);
         panelDownloadWebsitesButtons.add(spinnerDownloadInHours);
         panelDownloadWebsitesButtons.add(labelHours);
         panelDownloadWebsitesButtons.add(spinnerDownloadInMinutes);
         panelDownloadWebsitesButtons.add(labelMinutes);
+        buttonStartDownloadCycle.addActionListener(new MyActionListener());
         panelDownloadWebsitesButtons.add(buttonStartDownloadCycle);
 
         addToPanel.add(panelDownloadWebsitesButtons);
@@ -213,6 +216,21 @@ public class GUICountWords extends JFrame {
     // Innere Klasse um auf Benutzeraktionen zu reagieren
     // --------------------------------------------------
     class MyActionListener implements ActionListener {
+        private boolean checkIfDownloadIsPossible(){
+            if(textFieldHTTrackExe.getText().isEmpty()){
+                JOptionPane.showMessageDialog(GUICountWords.this, "Keine HTTrack-Exe selektiert", "Fehler", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            if(textFieldWebsiteFile.getText().isEmpty()){
+                JOptionPane.showMessageDialog(GUICountWords.this, "Keine Webseiten-Datei selektiert", "Fehler", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            if(textFieldHTTrackOutputFolder.getText().isEmpty()){
+                JOptionPane.showMessageDialog(GUICountWords.this, "Keine Ausgabeordner angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            return true; 
+        }
         public void actionPerformed(ActionEvent e) {
             if(e.getSource() == buttonChooseHTTrackExe){
                 int result = chooseHTTrackExe.showOpenDialog(GUICountWords.this);
@@ -226,14 +244,19 @@ public class GUICountWords extends JFrame {
                     textFieldWebsiteFile.setText(chooseWebsiteFile.getSelectedFile().toString());
                 }
             }
-            if(e.getSource() ==  buttonChooseHTTrackOutputFolder){
+            if(e.getSource() == buttonChooseHTTrackOutputFolder){
                 int result = chooseHTTrackOutputFolder.showOpenDialog(GUICountWords.this);
                 if(result == JFileChooser.APPROVE_OPTION){
                     textFieldHTTrackOutputFolder.setText(chooseHTTrackOutputFolder.getSelectedFile().toString());
                 }
             }
+            if(e.getSource() == buttonStartHTTrack){
+                if(!checkIfDownloadIsPossible()) return;
+                // "C:\Program Files\WinHTTrack\httrack.exe" -%%L "C:\Tmp\Webseiten.txt" -O "C:\Tmp\CMDHttrack" -w -c8 -f0 -s0 -p1 -A100000000 -q -%%v
+            }
+            if(e.getSource() == buttonStartDownloadCycle){
+                if(!checkIfDownloadIsPossible()) return;
+            }
         }
-    }
-
-    
+    }    
 }
