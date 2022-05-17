@@ -1,4 +1,7 @@
 import java.io.Console;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -18,6 +21,8 @@ import javax.swing.plaf.DimensionUIResource;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.FlowLayout;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -69,7 +74,8 @@ public class GUICountWords extends JFrame {
         setSize(1024,768);
         
         initComponentMainPanelAndOthers();
-        
+        addWindowEvents();
+
         setLocationRelativeTo(null);
         setResizable(false);
         setVisible(true);
@@ -213,6 +219,24 @@ public class GUICountWords extends JFrame {
     }
 
     // --------------------------------------------------
+    // Was soll passieren wenn sich das Fenster schließt
+    // --------------------------------------------------
+    private void addWindowEvents(){
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowOpened(WindowEvent e) {
+                System.out.println("this window was opened for the first time");
+                connectToDB();
+            }
+            @Override
+            public void windowClosing(WindowEvent e) {
+                System.out.println("WindowClosingDemo.windowClosing");
+                System.exit(0);
+            }
+        });
+    }
+
+    // --------------------------------------------------
     // Innere Klasse um auf Benutzeraktionen zu reagieren
     // --------------------------------------------------
     class MyActionListener implements ActionListener {
@@ -258,5 +282,29 @@ public class GUICountWords extends JFrame {
                 if(!checkIfDownloadIsPossible()) return;
             }
         }
-    }    
+    }
+    
+    // --------------------------------------------------
+    // Datenbank-Operationen
+    // --------------------------------------------------
+    private Connection conn = null;
+    private void connectToDB() {  
+        if(conn != null) return;
+        try {  
+            String url = "jdbc:sqlite:config.db";  
+            conn = DriverManager.getConnection(url);    
+            System.out.println("Connection to SQLite has been established.");       
+        } catch (SQLException e) {  System.out.println(e.getMessage()); }    
+    }
+    private void disconnectFromDB() {  
+        try { if (conn != null) conn.close(); }
+        catch (SQLException e) { System.out.println(e.getMessage()); }
+    }  
+
+    public void SaveSetting(String key, String value){
+
+    }
+    public String LoadSetting(String key){
+        return "";
+    }
 }
