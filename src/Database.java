@@ -1,3 +1,4 @@
+/*
 import java.sql.Connection;
 
 public static class Database {
@@ -24,3 +25,4 @@ public static class Database {
         
     }
 }
+*/
