@@ -1,7 +1,9 @@
-import java.io.Console;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -11,9 +13,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSpinner;
-import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
-import javax.swing.JTextPane;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.border.TitledBorder;
@@ -225,12 +225,11 @@ public class GUICountWords extends JFrame {
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowOpened(WindowEvent e) {
-                System.out.println("this window was opened for the first time");
                 connectToDB();
             }
             @Override
             public void windowClosing(WindowEvent e) {
-                System.out.println("WindowClosingDemo.windowClosing");
+                disconnectFromDB();
                 System.exit(0);
             }
         });
@@ -291,10 +290,10 @@ public class GUICountWords extends JFrame {
     private void connectToDB() {  
         if(conn != null) return;
         try {  
-            String url = "jdbc:sqlite:config.db";  
-            conn = DriverManager.getConnection(url);    
-            System.out.println("Connection to SQLite has been established.");       
-        } catch (SQLException e) {  System.out.println(e.getMessage()); }    
+            Class.forName("org.sqlite.JDBC");
+            conn = DriverManager.getConnection("jdbc:sqlite:config.db");    
+            System.out.println(LoadSetting("HTTrackEXE"));
+        } catch (Exception e) {  System.out.println(e.getMessage()); }    
     }
     private void disconnectFromDB() {  
         try { if (conn != null) conn.close(); }
@@ -305,6 +304,13 @@ public class GUICountWords extends JFrame {
 
     }
     public String LoadSetting(String key){
-        return "";
+        try {  
+            String sql = "SELECT * FROM settings WHERE key=?";  
+            PreparedStatement pstmt = conn.prepareStatement(sql);  
+            pstmt.setString(1, key);
+            ResultSet rs = pstmt.executeQuery();  
+            rs.next();
+            return rs.getString("value");
+        } catch (SQLException e) {  System.out.println(e.getMessage()); return ""; }  
     }
 }
