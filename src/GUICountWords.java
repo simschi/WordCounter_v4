@@ -66,6 +66,7 @@ public class GUICountWords extends JFrame {
     private JButton buttonChooseHTTrackOutputFolder;
     private JButton buttonStartHTTrack;
     private JButton buttonStartDownloadCycle;
+    private JButton buttonStopDownloadCycle;
     private JRadioButton radioButtonOnlyHTMLFiles;
     private JRadioButton radioButtonAllFiles;
     private ButtonGroup buttonGroupTypeOfFiles;
@@ -213,8 +214,9 @@ public class GUICountWords extends JFrame {
         spinnerDownloadInMinutes = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
         labelMinutes = new JLabel("Minuten");
         buttonStartDownloadCycle = new JButton("Zyklus starten");
+        buttonStopDownloadCycle = new JButton("Zyklus stoppen");
         labelNextDownloadAt = new JLabel();
-
+        
         panelDownloadWebsitesButtons.setLayout(new FlowLayout());
 
         buttonStartHTTrack.addActionListener(new MyActionListener());
@@ -226,8 +228,10 @@ public class GUICountWords extends JFrame {
         panelDownloadWebsitesButtons.add(labelMinutes);
         buttonStartDownloadCycle.addActionListener(new MyActionListener());
         panelDownloadWebsitesButtons.add(buttonStartDownloadCycle);
+        buttonStopDownloadCycle.addActionListener(new MyActionListener());
+        panelDownloadWebsitesButtons.add(buttonStopDownloadCycle);
         panelDownloadWebsitesButtons.add(labelNextDownloadAt);
-
+        
         addToPanel.add(panelDownloadWebsitesButtons);
     }
 
@@ -327,6 +331,14 @@ public class GUICountWords extends JFrame {
                 int nextCylceCombinedInMinutes = (nextCycleInHours * 60) + nextCycleInMinutes;
                 if(threadDownloadCycle != null) threadDownloadCycle.cancel(false);
                 threadDownloadCycle = executorService.scheduleAtFixedRate(runnableDownloadCycle, 0, nextCylceCombinedInMinutes, TimeUnit.MINUTES);
+                spinnerDownloadInHours.setEnabled(false);
+                spinnerDownloadInMinutes.setEnabled(false);
+            }
+            if(e.getSource() == buttonStopDownloadCycle){
+                if(threadDownloadCycle != null) threadDownloadCycle.cancel(false);
+                labelNextDownloadAt.setText("");
+                spinnerDownloadInHours.setEnabled(true);
+                spinnerDownloadInMinutes.setEnabled(true);
             }
         }
         private void Show_Output(Process process) throws IOException {
