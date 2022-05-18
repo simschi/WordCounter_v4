@@ -3,6 +3,13 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -22,7 +29,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.awt.FlowLayout;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -47,6 +57,7 @@ public class GUICountWords extends JFrame {
     private JLabel labelStartCycleIn;
     private JLabel labelHours;
     private JLabel labelMinutes; 
+    private JLabel labelNextDownloadAt;
     private JTextField textFieldWebsiteFile;
     private JTextField textFieldHTTrackExe;
     private JTextField textFieldHTTrackOutputFolder;
@@ -202,6 +213,7 @@ public class GUICountWords extends JFrame {
         spinnerDownloadInMinutes = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
         labelMinutes = new JLabel("Minuten");
         buttonStartDownloadCycle = new JButton("Zyklus starten");
+        labelNextDownloadAt = new JLabel();
 
         panelDownloadWebsitesButtons.setLayout(new FlowLayout());
 
@@ -214,6 +226,7 @@ public class GUICountWords extends JFrame {
         panelDownloadWebsitesButtons.add(labelMinutes);
         buttonStartDownloadCycle.addActionListener(new MyActionListener());
         panelDownloadWebsitesButtons.add(buttonStartDownloadCycle);
+        panelDownloadWebsitesButtons.add(labelNextDownloadAt);
 
         addToPanel.add(panelDownloadWebsitesButtons);
     }
@@ -256,6 +269,24 @@ public class GUICountWords extends JFrame {
             }
             return true; 
         }
+        private boolean checkIfCycleIsPossible(){
+            if(((int)spinnerDownloadInHours.getValue() < 1) && ((int)spinnerDownloadInMinutes.getValue() < 1)){
+                JOptionPane.showMessageDialog(GUICountWords.this, "Zykluswert muss größer 0 sein", "Fehler", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            return true; 
+        }
+        private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+        private Runnable runnableDownloadCycle = new Runnable() {
+            public void run() {
+                String nextCycleDateTime = getNextCycleDateTime(
+                    (int)spinnerDownloadInHours.getValue(), 
+                    (int)spinnerDownloadInMinutes.getValue()
+                );
+                labelNextDownloadAt.setText("Download startet um: " + nextCycleDateTime);
+            }
+        };
+        private ScheduledFuture<?> threadDownloadCycle;
         public void actionPerformed(ActionEvent e) {
             if(e.getSource() == buttonChooseHTTrackExe){
                 int result = chooseHTTrackExe.showOpenDialog(GUICountWords.this);
@@ -278,19 +309,40 @@ public class GUICountWords extends JFrame {
             if(e.getSource() == buttonStartHTTrack){
                 if(!checkIfDownloadIsPossible()) return;
                 try{
-                    // ".\httrack.exe" -%%L ".\Webseiten.txt" -O ".\CMDHttrack" -w -c8 -f0 -s0 -p1 -A100000000 -q -%%v
                     String fileTypes = (radioButtonOnlyHTMLFiles.isSelected() ? "-p1" : "-p3");
-                    String command = "\"" + textFieldHTTrackExe.getText() + "\" -%%L " +
-                        "\"" + textFieldWebsiteFile + "\" -O " + 
-                        "\"" + textFieldHTTrackOutputFolder + "\" " + 
-                        "-w -c8 -f0 -s0 " + fileTypes + " -A100000000 -q -%%v";
+                    String command = "\"" + textFieldHTTrackExe.getText() + "\" -%L " +
+                        "\"" + textFieldWebsiteFile.getText() + "\" -O " + 
+                        "\"" + textFieldHTTrackOutputFolder.getText() + "\" " + 
+                        "-w -c8 -f0 -s0 " + fileTypes + " -A100000000 -q -%v";
                     System.out.println(command);
-                    // Runtime.getRuntime().exec(command);
+                    Process runtime = Runtime.getRuntime().exec(command);
+                    Show_Output(runtime);
                 } catch (Exception ex) { System.out.println(ex.getMessage()); }    
             }
             if(e.getSource() == buttonStartDownloadCycle){
                 if(!checkIfDownloadIsPossible()) return;
+                if(!checkIfCycleIsPossible()) return;
+                int nextCycleInHours = (int)spinnerDownloadInHours.getValue();
+                int nextCycleInMinutes = (int)spinnerDownloadInMinutes.getValue();
+                int nextCylceCombinedInMinutes = (nextCycleInHours * 60) + nextCycleInMinutes;
+                if(threadDownloadCycle != null) threadDownloadCycle.cancel(false);
+                threadDownloadCycle = executorService.scheduleAtFixedRate(runnableDownloadCycle, 0, nextCylceCombinedInMinutes, TimeUnit.MINUTES);
             }
+        }
+        private void Show_Output(Process process) throws IOException {
+            BufferedReader output_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String output = "";
+            while ((output = output_reader.readLine()) != null) {
+                System.out.println(output);
+            }
+        }
+        private String getNextCycleDateTime(int inHours, int inMinutes){
+            SimpleDateFormat dateTimeFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+            Calendar cal = Calendar.getInstance(); 
+            cal.setTime(new Date());
+            cal.add(Calendar.HOUR_OF_DAY, inHours);    
+            cal.add(Calendar.MINUTE, inMinutes);  
+            return dateTimeFormat.format(cal.getTime());
         }
     }
     
@@ -322,6 +374,14 @@ public class GUICountWords extends JFrame {
                 if(key.equals("HTTrackEXE")) {
                     textFieldHTTrackExe.setText(value);
                     chooseHTTrackExe.setSelectedFile(new File(value));
+                }
+                if(key.equals("FileWithWebsites")) {
+                    textFieldWebsiteFile.setText(value);
+                    chooseWebsiteFile.setSelectedFile(new File(value));
+                }
+                if(key.equals("HTTrackOutputFolder")) {
+                    textFieldHTTrackOutputFolder.setText(value);
+                    chooseHTTrackOutputFolder.setSelectedFile(new File(value));
                 }
             }
         } catch (SQLException e) {  System.out.println(e.getMessage()); }  
