@@ -49,6 +49,8 @@ public class GUICountWords extends JFrame {
     private JPanel panelHTTrackOutputFolder;
     private JPanel panelHTTrackOptions;
     private JPanel panelDownloadWebsitesButtons;
+    private JPanel panelEvaluationWebsites;
+    private JPanel panelChooseTermsFile;
     private TitledBorder titledBorderDW;
     private TitledBorder titledBorderEval;
     private JLabel labelChooseWebsiteFile;
@@ -58,15 +60,21 @@ public class GUICountWords extends JFrame {
     private JLabel labelHours;
     private JLabel labelMinutes; 
     private JLabel labelNextDownloadAt;
+    private JLabel labelEvaluationWebsites; 
+    private JLabel labelChooseTermsFile;
     private JTextField textFieldWebsiteFile;
     private JTextField textFieldHTTrackExe;
     private JTextField textFieldHTTrackOutputFolder;
+    private JTextField textFieldEvaluationWebsites;
+    private JTextField textFieldTermsFile;
     private JButton buttonChooseWebsiteFile;
     private JButton buttonChooseHTTrackExe;
     private JButton buttonChooseHTTrackOutputFolder;
     private JButton buttonStartHTTrack;
     private JButton buttonStartDownloadCycle;
     private JButton buttonStopDownloadCycle;
+    private JButton buttonEvaluationWebsites;
+    private JButton buttonChooseTermsFile;
     private JRadioButton radioButtonOnlyHTMLFiles;
     private JRadioButton radioButtonAllFiles;
     private ButtonGroup buttonGroupTypeOfFiles;
@@ -75,6 +83,8 @@ public class GUICountWords extends JFrame {
     private JFileChooser chooseHTTrackExe; 
     private JFileChooser chooseWebsiteFile;
     private JFileChooser chooseHTTrackOutputFolder;
+    private JFileChooser chooseEvaluationWebsites; 
+    private JFileChooser chooseTermsFile;
     
     public static void main(String[] args) throws Exception {
         new GUICountWords();
@@ -109,6 +119,9 @@ public class GUICountWords extends JFrame {
         initComponentChooseHTTrackOutputFolder(panelDownloadWebsites);
         initComponentHTTrackOptions(panelDownloadWebsites);
         initComponentStartWebsiteDownload(panelDownloadWebsites);
+
+        initComponentEvaluationWebsites(panelEvaluation);
+        initComponentChooseTermsFile(panelEvaluation);
 
         mainPanel.add(panelDownloadWebsites);
         panelEvaluation.setPreferredSize(new DimensionUIResource(panelEvaluation.getWidth(), 310));
@@ -238,6 +251,50 @@ public class GUICountWords extends JFrame {
     }
 
     // --------------------------------------------------
+    // Auszuwertende Webseiten(-Ordner) festlegen
+    // --------------------------------------------------
+    private void initComponentEvaluationWebsites(JPanel addToPanel){
+        panelEvaluationWebsites = new JPanel();
+        labelEvaluationWebsites = new JLabel("Datei mit Webseitordner:", SwingConstants.RIGHT);
+        textFieldEvaluationWebsites = new JTextField(65);
+        buttonEvaluationWebsites = new JButton("Datei selektieren...");
+        chooseEvaluationWebsites = new JFileChooser();
+        
+        panelEvaluationWebsites.setLayout(new FlowLayout());
+        labelEvaluationWebsites.setPreferredSize(new DimensionUIResource(150, 30));
+        panelEvaluationWebsites.add(labelEvaluationWebsites);
+        textFieldEvaluationWebsites.setEditable(false);
+        panelEvaluationWebsites.add(textFieldEvaluationWebsites);
+        buttonEvaluationWebsites.addActionListener(new MyActionListener());
+        buttonEvaluationWebsites.setPreferredSize(new DimensionUIResource(150, 25));
+        panelEvaluationWebsites.add(buttonEvaluationWebsites);
+
+        addToPanel.add(panelEvaluationWebsites);
+    }
+
+    // --------------------------------------------------
+    // Datei mit auszuwertenden Begriffen auswählen
+    // --------------------------------------------------
+    private void initComponentChooseTermsFile(JPanel addToPanel){
+        panelChooseTermsFile = new JPanel();
+        labelChooseTermsFile = new JLabel("Datei mit Begriffen:", SwingConstants.RIGHT);
+        textFieldTermsFile = new JTextField(65);
+        buttonChooseTermsFile = new JButton("Datei selektieren...");
+        chooseTermsFile = new JFileChooser();
+
+        panelChooseTermsFile.setLayout(new FlowLayout());
+        labelChooseTermsFile.setPreferredSize(new DimensionUIResource(150, 30));
+        panelChooseTermsFile.add(labelChooseTermsFile);
+        textFieldTermsFile.setEditable(false);
+        panelChooseTermsFile.add(textFieldTermsFile);
+        buttonChooseTermsFile.addActionListener(new MyActionListener());
+        buttonChooseTermsFile.setPreferredSize(new DimensionUIResource(150, 25));
+        panelChooseTermsFile.add(buttonChooseTermsFile);
+
+        addToPanel.add(panelChooseTermsFile);
+    }
+
+    // --------------------------------------------------
     // Was soll passieren wenn sich das Fenster schließt
     // --------------------------------------------------
     private void addWindowEvents(){
@@ -348,6 +405,18 @@ public class GUICountWords extends JFrame {
                 buttonStartDownloadCycle.setEnabled(true);
                 buttonStopDownloadCycle.setEnabled(false);
             }
+            if(e.getSource() == buttonEvaluationWebsites){
+                int result = chooseEvaluationWebsites.showOpenDialog(GUICountWords.this);
+                if(result == JFileChooser.APPROVE_OPTION){
+                    textFieldEvaluationWebsites.setText(chooseEvaluationWebsites.getSelectedFile().toString());
+                }
+            }
+            if(e.getSource() == buttonChooseTermsFile){
+                int result = chooseTermsFile.showOpenDialog(GUICountWords.this);
+                if(result == JFileChooser.APPROVE_OPTION){
+                    textFieldTermsFile.setText(chooseTermsFile.getSelectedFile().toString());
+                }
+            }
         }
         private void Show_Output(Process process) throws IOException {
             BufferedReader output_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -422,6 +491,10 @@ public class GUICountWords extends JFrame {
     }
 
     private void SaveAllSettings(){
+
+    }
+
+    private void writeSettingsIntoConfigTextfile(){
 
     }
 
