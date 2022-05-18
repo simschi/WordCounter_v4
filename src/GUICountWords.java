@@ -1,8 +1,8 @@
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -22,6 +22,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
 import java.awt.FlowLayout;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -59,8 +60,8 @@ public class GUICountWords extends JFrame {
     private ButtonGroup buttonGroupTypeOfFiles;
     private JSpinner spinnerDownloadInHours;
     private JSpinner spinnerDownloadInMinutes;
-    private JFileChooser chooseWebsiteFile;
     private JFileChooser chooseHTTrackExe; 
+    private JFileChooser chooseWebsiteFile;
     private JFileChooser chooseHTTrackOutputFolder;
     
     public static void main(String[] args) throws Exception {
@@ -225,9 +226,11 @@ public class GUICountWords extends JFrame {
             @Override
             public void windowOpened(WindowEvent e) {
                 connectToDB();
+                LoadAllSettings();
             }
             @Override
             public void windowClosing(WindowEvent e) {
+                SaveAllSettings();
                 disconnectFromDB();
                 System.exit(0);
             }
@@ -274,7 +277,16 @@ public class GUICountWords extends JFrame {
             }
             if(e.getSource() == buttonStartHTTrack){
                 if(!checkIfDownloadIsPossible()) return;
-                // "C:\Program Files\WinHTTrack\httrack.exe" -%%L "C:\Tmp\Webseiten.txt" -O "C:\Tmp\CMDHttrack" -w -c8 -f0 -s0 -p1 -A100000000 -q -%%v
+                try{
+                    // ".\httrack.exe" -%%L ".\Webseiten.txt" -O ".\CMDHttrack" -w -c8 -f0 -s0 -p1 -A100000000 -q -%%v
+                    String fileTypes = (radioButtonOnlyHTMLFiles.isSelected() ? "-p1" : "-p3");
+                    String command = "\"" + textFieldHTTrackExe.getText() + "\" -%%L " +
+                        "\"" + textFieldWebsiteFile + "\" -O " + 
+                        "\"" + textFieldHTTrackOutputFolder + "\" " + 
+                        "-w -c8 -f0 -s0 " + fileTypes + " -A100000000 -q -%%v";
+                    System.out.println(command);
+                    // Runtime.getRuntime().exec(command);
+                } catch (Exception ex) { System.out.println(ex.getMessage()); }    
             }
             if(e.getSource() == buttonStartDownloadCycle){
                 if(!checkIfDownloadIsPossible()) return;
@@ -291,25 +303,32 @@ public class GUICountWords extends JFrame {
         try {  
             Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection("jdbc:sqlite:config.db");    
-            System.out.println(LoadSetting("HTTrackEXE"));
         } catch (Exception e) {  System.out.println(e.getMessage()); }    
     }
+
     private void disconnectFromDB() {  
         try { if (conn != null) conn.close(); }
         catch (SQLException e) { System.out.println(e.getMessage()); }
     }  
 
-    public void SaveSetting(String key, String value){
+    private void LoadAllSettings(){
+        try {  
+            Statement stmt = conn.createStatement(); 
+            ResultSet rs = stmt.executeQuery("SELECT * FROM settings");  
+            String key; String value;
+            while(rs.next()){
+                key = rs.getString("key");
+                value = rs.getString("value");
+                if(key.equals("HTTrackEXE")) {
+                    textFieldHTTrackExe.setText(value);
+                    chooseHTTrackExe.setSelectedFile(new File(value));
+                }
+            }
+        } catch (SQLException e) {  System.out.println(e.getMessage()); }  
+    }
+
+    private void SaveAllSettings(){
 
     }
-    public String LoadSetting(String key){
-        try {  
-            String sql = "SELECT * FROM settings WHERE key=?";  
-            PreparedStatement pstmt = conn.prepareStatement(sql);  
-            pstmt.setString(1, key);
-            ResultSet rs = pstmt.executeQuery();  
-            rs.next();
-            return rs.getString("value");
-        } catch (SQLException e) {  System.out.println(e.getMessage()); return ""; }  
-    }
+
 }
