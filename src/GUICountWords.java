@@ -111,6 +111,7 @@ public class GUICountWords extends JFrame {
         initComponentStartWebsiteDownload(panelDownloadWebsites);
 
         mainPanel.add(panelDownloadWebsites);
+        panelEvaluation.setPreferredSize(new DimensionUIResource(panelEvaluation.getWidth(), 310));
         mainPanel.add(panelEvaluation);
         add(mainPanel);
     }
@@ -229,6 +230,7 @@ public class GUICountWords extends JFrame {
         buttonStartDownloadCycle.addActionListener(new MyActionListener());
         panelDownloadWebsitesButtons.add(buttonStartDownloadCycle);
         buttonStopDownloadCycle.addActionListener(new MyActionListener());
+        buttonStopDownloadCycle.setEnabled(false);
         panelDownloadWebsitesButtons.add(buttonStopDownloadCycle);
         panelDownloadWebsitesButtons.add(labelNextDownloadAt);
         
@@ -283,6 +285,17 @@ public class GUICountWords extends JFrame {
         private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
         private Runnable runnableDownloadCycle = new Runnable() {
             public void run() {
+                File tempFileDownloadRunning = new File(".\\DownloadIsRunning"); 
+                File tempFileEvaluationRunning = new File(".\\EvaluationIsRunning"); 
+                if(tempFileDownloadRunning.exists()){
+                    System.out.println("Download läuft bereits, warten auf den nächsten Zyklus");
+                }
+                if(tempFileEvaluationRunning.exists()){
+                    System.out.println("Es läuft gerade eine Auswertung, warten auf den nächsten Zyklus");
+                }
+                if((!tempFileDownloadRunning.exists()) && (!tempFileEvaluationRunning.exists())){
+                    startHTTrackDownload();
+                }
                 String nextCycleDateTime = getNextCycleDateTime(
                     (int)spinnerDownloadInHours.getValue(), 
                     (int)spinnerDownloadInMinutes.getValue()
@@ -312,16 +325,7 @@ public class GUICountWords extends JFrame {
             }
             if(e.getSource() == buttonStartHTTrack){
                 if(!checkIfDownloadIsPossible()) return;
-                try{
-                    String fileTypes = (radioButtonOnlyHTMLFiles.isSelected() ? "-p1" : "-p3");
-                    String command = "\"" + textFieldHTTrackExe.getText() + "\" -%L " +
-                        "\"" + textFieldWebsiteFile.getText() + "\" -O " + 
-                        "\"" + textFieldHTTrackOutputFolder.getText() + "\" " + 
-                        "-w -c8 -f0 -s0 " + fileTypes + " -A100000000 -q -%v";
-                    System.out.println(command);
-                    Process runtime = Runtime.getRuntime().exec(command);
-                    Show_Output(runtime);
-                } catch (Exception ex) { System.out.println(ex.getMessage()); }    
+                startHTTrackDownload();
             }
             if(e.getSource() == buttonStartDownloadCycle){
                 if(!checkIfDownloadIsPossible()) return;
@@ -329,16 +333,20 @@ public class GUICountWords extends JFrame {
                 int nextCycleInHours = (int)spinnerDownloadInHours.getValue();
                 int nextCycleInMinutes = (int)spinnerDownloadInMinutes.getValue();
                 int nextCylceCombinedInMinutes = (nextCycleInHours * 60) + nextCycleInMinutes;
-                if(threadDownloadCycle != null) threadDownloadCycle.cancel(false);
+                // if(threadDownloadCycle != null) threadDownloadCycle.cancel(false);
                 threadDownloadCycle = executorService.scheduleAtFixedRate(runnableDownloadCycle, 0, nextCylceCombinedInMinutes, TimeUnit.MINUTES);
                 spinnerDownloadInHours.setEnabled(false);
                 spinnerDownloadInMinutes.setEnabled(false);
+                buttonStartDownloadCycle.setEnabled(false);
+                buttonStopDownloadCycle.setEnabled(true);
             }
             if(e.getSource() == buttonStopDownloadCycle){
                 if(threadDownloadCycle != null) threadDownloadCycle.cancel(false);
                 labelNextDownloadAt.setText("");
                 spinnerDownloadInHours.setEnabled(true);
                 spinnerDownloadInMinutes.setEnabled(true);
+                buttonStartDownloadCycle.setEnabled(true);
+                buttonStopDownloadCycle.setEnabled(false);
             }
         }
         private void Show_Output(Process process) throws IOException {
@@ -355,6 +363,20 @@ public class GUICountWords extends JFrame {
             cal.add(Calendar.HOUR_OF_DAY, inHours);    
             cal.add(Calendar.MINUTE, inMinutes);  
             return dateTimeFormat.format(cal.getTime());
+        }
+        private void startHTTrackDownload(){
+            try{
+                String fileTypes = (radioButtonOnlyHTMLFiles.isSelected() ? "-p1" : "-p3");
+                String command = "\"" + textFieldHTTrackExe.getText() + "\" -%L " +
+                    "\"" + textFieldWebsiteFile.getText() + "\" -O " + 
+                    "\"" + textFieldHTTrackOutputFolder.getText() + "\" " + 
+                    "-w -c8 -f0 -s0 " + fileTypes + " -A100000000 -q -%v";
+                File tempFileDownloadRunning = new File(".\\DownloadIsRunning"); 
+                tempFileDownloadRunning.createNewFile();
+                Process runtime = Runtime.getRuntime().exec(command);
+                Show_Output(runtime);
+                tempFileDownloadRunning.delete();
+            } catch (Exception ex) { System.out.println(ex.getMessage()); } 
         }
     }
     
