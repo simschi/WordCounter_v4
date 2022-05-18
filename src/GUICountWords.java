@@ -19,6 +19,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSpinner;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
@@ -41,7 +42,9 @@ public class GUICountWords extends JFrame {
     // --------------------------------------------------
     // UI-Elemente
     // --------------------------------------------------
+    private JTabbedPane countWordsRegisters;
     private JPanel mainPanel;
+    private JPanel searchPanel;
     private JPanel panelDownloadWebsites;
     private JPanel panelEvaluation;
     private JPanel panelChooseWebsiteFile;
@@ -51,22 +54,34 @@ public class GUICountWords extends JFrame {
     private JPanel panelDownloadWebsitesButtons;
     private JPanel panelEvaluationWebsites;
     private JPanel panelChooseTermsFile;
+    private JPanel panelEvaluationOutputFolder;
+    private JPanel panelEvaluationButtons;
+    private JPanel panelFilterCriteria;
+    private JPanel panelSearchResults;
     private TitledBorder titledBorderDW;
     private TitledBorder titledBorderEval;
+    private TitledBorder titledBorderFilterCriteria;
+    private TitledBorder titledBorderSearchResult;
     private JLabel labelChooseWebsiteFile;
     private JLabel labelHTTrackExe;
     private JLabel labelHTTrackOutputFolder;
-    private JLabel labelStartCycleIn;
-    private JLabel labelHours;
-    private JLabel labelMinutes; 
+    private JLabel labelStartDownloadCycleIn;
+    private JLabel labelDownloadHours;
+    private JLabel labelDownloadMinutes; 
     private JLabel labelNextDownloadAt;
     private JLabel labelEvaluationWebsites; 
     private JLabel labelChooseTermsFile;
+    private JLabel labelEvaluationOutputFolder;
+    private JLabel labelEvaluationHours;
+    private JLabel labelEvaluationMinutes; 
+    private JLabel labelStartEvaluationCycleIn;
+    private JLabel labelNextEvaluationAt;
     private JTextField textFieldWebsiteFile;
     private JTextField textFieldHTTrackExe;
     private JTextField textFieldHTTrackOutputFolder;
     private JTextField textFieldEvaluationWebsites;
     private JTextField textFieldTermsFile;
+    private JTextField textFieldEvaluationOutputFolder;
     private JButton buttonChooseWebsiteFile;
     private JButton buttonChooseHTTrackExe;
     private JButton buttonChooseHTTrackOutputFolder;
@@ -75,16 +90,23 @@ public class GUICountWords extends JFrame {
     private JButton buttonStopDownloadCycle;
     private JButton buttonEvaluationWebsites;
     private JButton buttonChooseTermsFile;
+    private JButton buttonEvaluationOutputFolder;
+    private JButton buttonStartEvaluation;
+    private JButton buttonStartEvaluationCycle;
+    private JButton buttonStopEvaluationCycle;
     private JRadioButton radioButtonOnlyHTMLFiles;
     private JRadioButton radioButtonAllFiles;
     private ButtonGroup buttonGroupTypeOfFiles;
     private JSpinner spinnerDownloadInHours;
     private JSpinner spinnerDownloadInMinutes;
+    private JSpinner spinnerEvaluateInHours;
+    private JSpinner spinnerEvaluateInMinutes;
     private JFileChooser chooseHTTrackExe; 
     private JFileChooser chooseWebsiteFile;
     private JFileChooser chooseHTTrackOutputFolder;
     private JFileChooser chooseEvaluationWebsites; 
     private JFileChooser chooseTermsFile;
+    private JFileChooser chooseEvaluationOutputFolder;
     
     public static void main(String[] args) throws Exception {
         new GUICountWords();
@@ -93,7 +115,7 @@ public class GUICountWords extends JFrame {
     public GUICountWords(){
         setTitle("Word Counter");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1024,768);
+        setSize(1024,512);
         
         initComponentMainPanelAndOthers();
         addWindowEvents();
@@ -104,15 +126,24 @@ public class GUICountWords extends JFrame {
     }
 
     private void initComponentMainPanelAndOthers(){
+        countWordsRegisters = new JTabbedPane();
         mainPanel = new JPanel();
+        searchPanel = new JPanel();
         panelDownloadWebsites = new JPanel();
         panelEvaluation = new JPanel();
+        panelFilterCriteria = new JPanel();
+        panelSearchResults = new JPanel();
         titledBorderDW = new TitledBorder("Website-Download (mittels HTTrack)");
         titledBorderEval = new TitledBorder("Auswertungen");
+        titledBorderFilterCriteria = new TitledBorder("Filterkriterien");
+        titledBorderSearchResult = new TitledBorder("Suchergebnis");
         
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        searchPanel.setLayout(new BoxLayout(searchPanel, BoxLayout.Y_AXIS));
         panelDownloadWebsites.setBorder(titledBorderDW);
         panelEvaluation.setBorder(titledBorderEval);
+        panelFilterCriteria.setBorder(titledBorderFilterCriteria);
+        panelSearchResults.setBorder(titledBorderSearchResult);
 
         initComponentHTTrackExe(panelDownloadWebsites);
         initComponentChooseWebSiteFile(panelDownloadWebsites);
@@ -122,11 +153,19 @@ public class GUICountWords extends JFrame {
 
         initComponentEvaluationWebsites(panelEvaluation);
         initComponentChooseTermsFile(panelEvaluation);
+        initComponentChooseEvaluationOutputFolder(panelEvaluation);
+        initComponentStartEvaluation(panelEvaluation);
 
         mainPanel.add(panelDownloadWebsites);
-        panelEvaluation.setPreferredSize(new DimensionUIResource(panelEvaluation.getWidth(), 310));
+        panelEvaluation.setPreferredSize(new DimensionUIResource(panelEvaluation.getWidth(), 40));
         mainPanel.add(panelEvaluation);
-        add(mainPanel);
+        searchPanel.add(panelFilterCriteria);
+        panelSearchResults.setPreferredSize(new DimensionUIResource(panelSearchResults.getWidth(), 200));
+        searchPanel.add(panelSearchResults);
+
+        countWordsRegisters.addTab("Programmsteuerung",mainPanel);
+        countWordsRegisters.addTab("Suche",searchPanel);
+        add(countWordsRegisters);
     }
     
     // --------------------------------------------------
@@ -222,11 +261,11 @@ public class GUICountWords extends JFrame {
     private void initComponentStartWebsiteDownload(JPanel addToPanel){
         panelDownloadWebsitesButtons = new JPanel();
         buttonStartHTTrack = new JButton("Download jetzt starten");
-        labelStartCycleIn = new JLabel("Download alle: ");
+        labelStartDownloadCycleIn = new JLabel("Download alle: ");
         spinnerDownloadInHours = new JSpinner(new SpinnerNumberModel(0, 0, 99, 1));
-        labelHours = new JLabel("Stunden");
+        labelDownloadHours = new JLabel("Stunden");
         spinnerDownloadInMinutes = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
-        labelMinutes = new JLabel("Minuten");
+        labelDownloadMinutes = new JLabel("Minuten");
         buttonStartDownloadCycle = new JButton("Zyklus starten");
         buttonStopDownloadCycle = new JButton("Zyklus stoppen");
         labelNextDownloadAt = new JLabel();
@@ -235,11 +274,11 @@ public class GUICountWords extends JFrame {
 
         buttonStartHTTrack.addActionListener(new MyActionListener());
         panelDownloadWebsitesButtons.add(buttonStartHTTrack);
-        panelDownloadWebsitesButtons.add(labelStartCycleIn);
+        panelDownloadWebsitesButtons.add(labelStartDownloadCycleIn);
         panelDownloadWebsitesButtons.add(spinnerDownloadInHours);
-        panelDownloadWebsitesButtons.add(labelHours);
+        panelDownloadWebsitesButtons.add(labelDownloadHours);
         panelDownloadWebsitesButtons.add(spinnerDownloadInMinutes);
-        panelDownloadWebsitesButtons.add(labelMinutes);
+        panelDownloadWebsitesButtons.add(labelDownloadMinutes);
         buttonStartDownloadCycle.addActionListener(new MyActionListener());
         panelDownloadWebsitesButtons.add(buttonStartDownloadCycle);
         buttonStopDownloadCycle.addActionListener(new MyActionListener());
@@ -292,6 +331,63 @@ public class GUICountWords extends JFrame {
         panelChooseTermsFile.add(buttonChooseTermsFile);
 
         addToPanel.add(panelChooseTermsFile);
+    }
+
+    // --------------------------------------------------
+    // Auswertungs Output Folder festlegen
+    // --------------------------------------------------
+    private void initComponentChooseEvaluationOutputFolder(JPanel addToPanel){
+        panelEvaluationOutputFolder = new JPanel();
+        labelEvaluationOutputFolder = new JLabel("Ausgabeordner:", SwingConstants.RIGHT);
+        textFieldEvaluationOutputFolder = new JTextField(65);
+        buttonEvaluationOutputFolder = new JButton("Ordner selektieren...");
+        chooseEvaluationOutputFolder = new JFileChooser();
+        chooseEvaluationOutputFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+
+        panelEvaluationOutputFolder.setLayout(new FlowLayout());
+        labelEvaluationOutputFolder.setPreferredSize(new DimensionUIResource(150, 30));
+        panelEvaluationOutputFolder.add(labelEvaluationOutputFolder);
+        textFieldEvaluationOutputFolder.setEditable(false);
+        panelEvaluationOutputFolder.add(textFieldEvaluationOutputFolder);
+        buttonEvaluationOutputFolder.addActionListener(new MyActionListener());
+        buttonEvaluationOutputFolder.setPreferredSize(new DimensionUIResource(150, 25));
+        panelEvaluationOutputFolder.add(buttonEvaluationOutputFolder);
+
+        addToPanel.add(panelEvaluationOutputFolder);
+    }
+
+    // --------------------------------------------------
+    // Buttons für die Auswertung initialisieren
+    // --------------------------------------------------
+    private void initComponentStartEvaluation(JPanel addToPanel){
+        panelEvaluationButtons = new JPanel();
+        buttonStartEvaluation = new JButton("Download jetzt starten");
+        labelStartEvaluationCycleIn = new JLabel("Download alle: ");
+        spinnerEvaluateInHours = new JSpinner(new SpinnerNumberModel(0, 0, 99, 1));
+        labelEvaluationHours = new JLabel("Stunden");
+        spinnerEvaluateInMinutes = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
+        labelEvaluationMinutes = new JLabel("Minuten");
+        buttonStartEvaluationCycle = new JButton("Zyklus starten");
+        buttonStopEvaluationCycle = new JButton("Zyklus stoppen");
+        labelNextEvaluationAt = new JLabel();
+        
+        panelEvaluationButtons.setLayout(new FlowLayout());
+
+        buttonStartEvaluation.addActionListener(new MyActionListener());
+        panelEvaluationButtons.add(buttonStartEvaluation);
+        panelEvaluationButtons.add(labelStartEvaluationCycleIn);
+        panelEvaluationButtons.add(spinnerEvaluateInHours);
+        panelEvaluationButtons.add(labelEvaluationHours);
+        panelEvaluationButtons.add(spinnerEvaluateInMinutes);
+        panelEvaluationButtons.add(labelEvaluationMinutes);
+        buttonStartEvaluationCycle.addActionListener(new MyActionListener());
+        panelEvaluationButtons.add(buttonStartEvaluationCycle);
+        buttonStopEvaluationCycle.addActionListener(new MyActionListener());
+        buttonStopEvaluationCycle.setEnabled(false);
+        panelEvaluationButtons.add(buttonStopEvaluationCycle);
+        panelEvaluationButtons.add(labelNextEvaluationAt);
+        
+        addToPanel.add(panelEvaluationButtons);
     }
 
     // --------------------------------------------------
@@ -415,6 +511,12 @@ public class GUICountWords extends JFrame {
                 int result = chooseTermsFile.showOpenDialog(GUICountWords.this);
                 if(result == JFileChooser.APPROVE_OPTION){
                     textFieldTermsFile.setText(chooseTermsFile.getSelectedFile().toString());
+                }
+            }
+            if(e.getSource() == buttonEvaluationOutputFolder){
+                int result = chooseEvaluationOutputFolder.showOpenDialog(GUICountWords.this);
+                if(result == JFileChooser.APPROVE_OPTION){
+                    textFieldEvaluationOutputFolder.setText(chooseEvaluationOutputFolder.getSelectedFile().toString());
                 }
             }
         }
