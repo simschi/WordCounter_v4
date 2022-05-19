@@ -772,7 +772,7 @@ public class GUICountWords extends JFrame {
     }
 
     private void writeSettingsIntoConfigTextfile(){
-
+        
     }
 
     // --------------------------------------------------

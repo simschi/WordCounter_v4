@@ -39,9 +39,8 @@ public class CountWords {
     // --------------------------------------------------
     // Config-Datei einlesen 
     // --------------------------------------------------
-    private static String fileWithWebsites;
+    private static String fileWithWebsiteFolders;
     private static String fileWithTerms;
-    private static String evaluationDatabase;
     private static String writeInDatabase;
     private static String backupFolder;
     private static String downloadedWebsitesFolder;
@@ -55,31 +54,30 @@ public class CountWords {
         while ((setting = reader.readLine()) != null) {
             settingName = setting.split("=")[0];
             settingValue = setting.split("=")[1];
-            if(settingName.equals("DateiMitWebseiten")) fileWithWebsites = settingValue;
-            if(settingName.equals("DateiMitBegriffen")) fileWithTerms = settingValue; 
-            if(settingName.equals("AuswertungsDatenbank")) evaluationDatabase = settingValue;
-            if(settingName.equals("InDatenbankSchreiben")) writeInDatabase = settingValue;
-            if(settingName.equals("AuswertungsOrdner")) backupFolder = settingValue;
             if(settingName.equals("AuszuwertenderOrdner")) downloadedWebsitesFolder = settingValue;
+            if(settingName.equals("DateiMitWebseitordnern")) fileWithWebsiteFolders = settingValue;
+            if(settingName.equals("DateiMitBegriffen")) fileWithTerms = settingValue; 
+            if(settingName.equals("AuswertungsOrdner")) backupFolder = settingValue;
+            if(settingName.equals("InDatenbankSchreiben")) writeInDatabase = settingValue;
             if(settingName.equals("NullWerteInErgebnisMitaufnehmen")) zeroValuesInResult = settingValue;
         }
         reader.close();
     } 
 
     // --------------------------------------------------
-    // Zu durchsuchende Webseiten einlesen
+    // Zu durchsuchende Webseitordner einlesen
     // --------------------------------------------------
-    private static List<String> getWebsitesToSearch() throws Exception{
-        List<String> websites = new ArrayList<String>();
-        File websitesFileNames = new File(fileWithWebsites);
-        BufferedReader reader = new BufferedReader(new FileReader(websitesFileNames));
-        String website;
-        while ((website = reader.readLine()) != null) {
-          websites.add(website);
+    private static List<String> getWebsiteFoldersToSearch() throws Exception{
+        List<String> websiteFolders = new ArrayList<String>();
+        File websiteFoldersFileName = new File(fileWithWebsiteFolders);
+        BufferedReader reader = new BufferedReader(new FileReader(websiteFoldersFileName));
+        String websiteFolder;
+        while ((websiteFolder = reader.readLine()) != null) {
+            websiteFolders.add(websiteFolder);
         }
         reader.close();
-        copyFileInCurrentBackupDir(fileWithWebsites);
-        return websites;
+        copyFileInCurrentBackupDir(fileWithWebsiteFolders);
+        return websiteFolders;
     }
 
     // --------------------------------------------------
@@ -152,14 +150,11 @@ public class CountWords {
     // --------------------------------------------------
     private static Map<String, Integer> foundWordsURLs;
     private static Map<String, Integer> foundWordsWebsites;
-    private static void analyzeWebsite(String website, List<String> searchTerms){
+    private static void analyzeWebsite(String websiteFolder, List<String> searchTerms){
         // Alle Dateien aus Ordner samt Subordner auslesen
-        String websiteDirectory = website.replace("https://", "").replace("http://", "");
-        websiteDirectory = websiteDirectory.substring(0, websiteDirectory.indexOf("/"));
-        String websiteFolder = downloadedWebsitesFolder + "\\" + websiteDirectory;
-        File websiteFolderFile = new File(websiteFolder);
+        String websiteFolderPath = downloadedWebsitesFolder + "\\" + websiteFolder;
+        File websiteFolderFile = new File(websiteFolderPath);
         filesInDir = new ArrayList<String>();
-        System.out.println(websiteFolder);
         getAllFilesInDir(websiteFolderFile);
 
         // Jede Datei nach sämtlichen Begriffen durchsuchen
@@ -169,7 +164,7 @@ public class CountWords {
             for (String searchTerm : searchTerms) {
                 String url = htmlFileName.replace(downloadedWebsitesFolder + "\\", "https:\\\\");
                 String keyURLs = searchTerm + ";" + url;
-                String keyWebsites = searchTerm + ";" + website;
+                String keyWebsites = searchTerm + ";" + websiteFolder;
                 int value = countWordInText(htmlPlainText, searchTerm);
                 if((value > 0) || (zeroValuesInResult.toLowerCase().equals("ja"))) {
                     if(foundWordsURLs.containsKey(keyURLs)){
@@ -187,7 +182,7 @@ public class CountWords {
                 }
             }
         }
-        copyWebsiteInCurrentBackupDir(websiteFolder);
+        copyWebsiteInCurrentBackupDir(websiteFolderPath);
     }
 
     // --------------------------------------------------
@@ -250,7 +245,7 @@ public class CountWords {
     private static void writeFoundWordsInDatabase() throws Exception {
         if(!writeInDatabase.toLowerCase().equals("ja")) return;
         String driver = "org.sqlite.JDBC";
-        String url = "jdbc:sqlite:" + evaluationDatabase;
+        String url = "jdbc:sqlite:Words.db";
 
         Class.forName(driver);
         Connection conn = DriverManager.getConnection(url);
@@ -269,7 +264,7 @@ public class CountWords {
         prep.close();
         conn.close();
 
-        copyFileInCurrentBackupDir(evaluationDatabase);
+        copyFileInCurrentBackupDir("Words.db");
     }
 
     // --------------------------------------------------
@@ -325,12 +320,12 @@ public class CountWords {
         getDataFromConfigFile();
         createDateTimeFolder();
         copyFileInCurrentBackupDir("config.txt");
-        List<String> websitesToSearch = getWebsitesToSearch();
+        List<String> websiteFoldersToSearch = getWebsiteFoldersToSearch();
         List<String> searchTerms = getSearchTerms();
         foundWordsURLs = new TreeMap<String, Integer>();
         foundWordsWebsites = new TreeMap<String, Integer>();
-        for (String websiteToSearch : websitesToSearch) {
-            analyzeWebsite(websiteToSearch, searchTerms);
+        for (String websiteFolderToSearch : websiteFoldersToSearch) {
+            analyzeWebsite(websiteFolderToSearch, searchTerms);
         }
         writeFoundWordsExcel();
         writeFoundWordsInDatabase(); 
