@@ -728,7 +728,7 @@ public class GUICountWords extends JFrame {
                 myWriter.write("NullWerteInErgebnisMitaufnehmen=" + zeroValuesInResult + "\r\n");
                 String doTrendAnalysis = checkBoxTrendAnalysis.isSelected() ? "Ja" : "Nein";
                 myWriter.write("InDatenbankSchreiben=" + doTrendAnalysis + "\r\n");
-                myWriter.write("TrendAnalysisName=" + textFieldTrendAnalysisName + "\r\n");
+                myWriter.write("TrendAnalysisName=" + textFieldTrendAnalysisName.getText() + "\r\n");
                 myWriter.close();
             } catch (IOException e) { e.printStackTrace(); }
         }
