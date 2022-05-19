@@ -1,5 +1,6 @@
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -721,7 +722,53 @@ public class GUICountWords extends JFrame {
     }
 
     private void SaveAllSettings(){
-
+        try {
+            PreparedStatement pstmt; 
+            pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
+            pstmt.setString(2, "HTTrackEXE");
+            pstmt.setString(1, textFieldHTTrackExe.getText());
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
+            pstmt.setString(2, "FileWithWebsites");
+            pstmt.setString(1, textFieldWebsiteFile.getText());
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
+            pstmt.setString(2, "HTTrackOutputFolder");
+            pstmt.setString(1, textFieldHTTrackOutputFolder.getText());
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
+            pstmt.setString(2, "DownloadOnlyHTMLFiles");
+            pstmt.setString(1, radioButtonOnlyHTMLFiles.isSelected() ? "yes" : "no");
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
+            pstmt.setString(2, "DownloadCycleHours");
+            pstmt.setString(1, spinnerDownloadInHours.getValue().toString());
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
+            pstmt.setString(2, "DownloadCycleMinutes");
+            pstmt.setString(1, spinnerDownloadInMinutes.getValue().toString());
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
+            pstmt.setString(2, "FileWithWebsiteFolders");
+            pstmt.setString(1, textFieldEvaluationWebsites.getText());
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
+            pstmt.setString(2, "FileWithTerms");
+            pstmt.setString(1, textFieldTermsFile.getText());
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
+            pstmt.setString(2, "EvaluationOutputFolder");
+            pstmt.setString(1, textFieldEvaluationOutputFolder.getText());
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
+            pstmt.setString(2, "EvaluationCycleHours");
+            pstmt.setString(1, spinnerEvaluateInHours.getValue().toString());
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
+            pstmt.setString(2, "EvaluationCycleMinutes");
+            pstmt.setString(1, spinnerEvaluateInMinutes.getValue().toString());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {  System.out.println(e.getMessage()); }
     }
 
     private void writeSettingsIntoConfigTextfile(){
