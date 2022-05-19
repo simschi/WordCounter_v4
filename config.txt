@@ -1,7 +1,6 @@
-AuszuwertenderOrdner=C:\HTTrack_Heruntergeladene_Webseiten\Testprojekt
-DateiMitWebseitordnern=C:\Users\Gerald\Desktop\JKU\LVAs\Business Engineering and Management - Praktikum (257.300)\Marktrecherche_Tools\WebseitenOrdner.txt
-DateiMitBegriffen=C:\Users\Gerald\Desktop\JKU\LVAs\Business Engineering and Management - Praktikum (257.300)\Marktrecherche_Tools\WordCounter\Begriffe.xlsx
-AuswertungsDatenbank=C:\Users\Gerald\Desktop\JKU\LVAs\Business Engineering and Management - Praktikum (257.300)\Marktrecherche_Tools\Words.db
-AuswertungsOrdner=C:\Users\Gerald\Desktop\JKU\LVAs\Business Engineering and Management - Praktikum (257.300)\Marktrecherche_Tools\Auswertungen
+AuszuwertenderOrdner=C:\Tmp\CMDHttrack
+DateiMitWebseitordnern=C:\Tmp\WebseitenOrdner.txt
+DateiMitBegriffen=C:\Tmp\Begriffe.xlsx
+AuswertungsOrdner=C:\Tmp\Auswertungen
 InDatenbankSchreiben=Ja
 NullWerteInErgebnisMitaufnehmen=Ja

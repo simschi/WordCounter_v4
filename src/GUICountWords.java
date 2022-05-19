@@ -33,6 +33,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.awt.FlowLayout;
@@ -618,30 +619,47 @@ public class GUICountWords extends JFrame {
             return dateTimeFormat.format(cal.getTime());
         }
         private void startHTTrackDownload(){
+            File tempFileDownloadRunning = new File(".\\DownloadIsRunning"); 
             try{
                 String fileTypes = (radioButtonOnlyHTMLFiles.isSelected() ? "-p1" : "-p3");
                 String command = "\"" + textFieldHTTrackExe.getText() + "\" -%L " +
                     "\"" + textFieldWebsiteFile.getText() + "\" -O " + 
                     "\"" + textFieldHTTrackOutputFolder.getText() + "\" " + 
                     "-w -c8 -f0 -s0 " + fileTypes + " -A100000000 -q -%v";
-                File tempFileDownloadRunning = new File(".\\DownloadIsRunning"); 
                 tempFileDownloadRunning.createNewFile();
                 Process runtime = Runtime.getRuntime().exec(command);
                 Show_Output(runtime);
-                tempFileDownloadRunning.delete();
-            } catch (Exception ex) { System.out.println(ex.getMessage()); } 
+            } catch (Exception ex) { 
+                System.out.println(ex.getMessage()); 
+            } finally { 
+                if(tempFileDownloadRunning.exists()) tempFileDownloadRunning.delete();
+            } 
+        }
+        private void writeSettingsIntoConfigTextfile(){
+            try {
+                FileWriter myWriter = new FileWriter("config.txt");
+                myWriter.write("AuszuwertenderOrdner=" + textFieldHTTrackOutputFolder.getText() + "\r\n");
+                myWriter.write("DateiMitWebseitordnern=" + textFieldEvaluationWebsites.getText() + "\r\n");
+                myWriter.write("DateiMitBegriffen=" + textFieldTermsFile.getText() + "\r\n");
+                myWriter.write("AuswertungsOrdner=" + textFieldEvaluationOutputFolder.getText() + "\r\n"); 
+                myWriter.write("InDatenbankSchreiben=Ja" + "\r\n");
+                myWriter.write("NullWerteInErgebnisMitaufnehmen=Ja" + "\r\n");
+                myWriter.close();
+            } catch (IOException e) { e.printStackTrace(); }
         }
         private void startEvaluation(){
+            File tempFileEvaluationRunning = new File(".\\EvaluationIsRunning");
             try{
                 writeSettingsIntoConfigTextfile();
-                String command = "\"%JAVA_HOME%\\bin\\java.exe\" -cp \".\\lib\\*\" \".\\src\\CountWords.java\"";
-                File tempFileEvaluationRunning = new File(".\\EvaluationIsRunning"); 
-                // tempFileEvaluationRunning.createNewFile();
-                System.out.println(command);
-                // Process runtime = Runtime.getRuntime().exec(command);
-                // Show_Output(runtime);
-                // tempFileEvaluationRunning.delete();
-            } catch (Exception ex) { System.out.println(ex.getMessage()); }
+                String command = "\"" + System.getenv("JAVA_HOME") + "\\bin\\java.exe\" -cp \".\\lib\\*\" \".\\src\\CountWords.java\"";
+                tempFileEvaluationRunning.createNewFile();
+                Process runtime = Runtime.getRuntime().exec(command);
+                Show_Output(runtime);
+            } catch (Exception ex) { 
+                System.out.println(ex.getMessage()); 
+            } finally { 
+                if(tempFileEvaluationRunning.exists()) tempFileEvaluationRunning.delete();
+            }
         }
     }
     
@@ -769,10 +787,6 @@ public class GUICountWords extends JFrame {
             pstmt.setString(1, spinnerEvaluateInMinutes.getValue().toString());
             pstmt.executeUpdate();
         } catch (SQLException e) {  System.out.println(e.getMessage()); }
-    }
-
-    private void writeSettingsIntoConfigTextfile(){
-        
     }
 
     // --------------------------------------------------
