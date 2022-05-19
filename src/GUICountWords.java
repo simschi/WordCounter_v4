@@ -40,6 +40,9 @@ import javax.swing.ButtonGroup;
 
 public class GUICountWords extends JFrame {
     // --------------------------------------------------
+    // GUI Start
+    // --------------------------------------------------
+    // --------------------------------------------------
     // UI-Elemente
     // --------------------------------------------------
     private JTabbedPane countWordsRegisters;
@@ -391,6 +394,13 @@ public class GUICountWords extends JFrame {
     }
 
     // --------------------------------------------------
+    // GUI Ende
+    // --------------------------------------------------
+    // --------------------------------------------------
+    // Event Handling Start
+    // --------------------------------------------------
+
+    // --------------------------------------------------
     // Was soll passieren wenn sich das Fenster schließt
     // --------------------------------------------------
     private void addWindowEvents(){
@@ -423,13 +433,39 @@ public class GUICountWords extends JFrame {
                 return false;
             }
             if(textFieldHTTrackOutputFolder.getText().isEmpty()){
-                JOptionPane.showMessageDialog(GUICountWords.this, "Keine Ausgabeordner angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(GUICountWords.this, "Kein HTTrack Ausgabeordner angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
             return true; 
         }
-        private boolean checkIfCycleIsPossible(){
+        private boolean checkIfDownloadCycleIsPossible(){
             if(((int)spinnerDownloadInHours.getValue() < 1) && ((int)spinnerDownloadInMinutes.getValue() < 1)){
+                JOptionPane.showMessageDialog(GUICountWords.this, "Zykluswert muss größer 0 sein", "Fehler", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            return true; 
+        }
+        private boolean checkIfEvaluationIsPossible(){
+            if(textFieldHTTrackOutputFolder.getText().isEmpty()){
+                JOptionPane.showMessageDialog(GUICountWords.this, "Kein HTTrack Ausgabeordner angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            if(textFieldEvaluationWebsites.getText().isEmpty()){
+                JOptionPane.showMessageDialog(GUICountWords.this, "Kein Webseiten-Ordner-Datei angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            if(textFieldTermsFile.getText().isEmpty()){
+                JOptionPane.showMessageDialog(GUICountWords.this, "Kein Suchbegriff-Datei angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            if(textFieldEvaluationOutputFolder.getText().isEmpty()){
+                JOptionPane.showMessageDialog(GUICountWords.this, "Kein Auswertungs-Ausgabeordner angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            return true;
+        }
+        private boolean checkIfEvaluationCycleIsPossible(){
+            if(((int)spinnerEvaluateInHours.getValue() < 1) && ((int)spinnerEvaluateInMinutes.getValue() < 1)){
                 JOptionPane.showMessageDialog(GUICountWords.this, "Zykluswert muss größer 0 sein", "Fehler", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
@@ -456,7 +492,28 @@ public class GUICountWords extends JFrame {
                 labelNextDownloadAt.setText("Download startet um: " + nextCycleDateTime);
             }
         };
+        private Runnable runnableEvaluationCycle = new Runnable() {
+            public void run() {
+                File tempFileDownloadRunning = new File(".\\DownloadIsRunning"); 
+                File tempFileEvaluationRunning = new File(".\\EvaluationIsRunning"); 
+                if(tempFileDownloadRunning.exists()){
+                    System.out.println("Es läuft gerade ein Download, warten auf den nächsten Zyklus");
+                }
+                if(tempFileEvaluationRunning.exists()){
+                    System.out.println("Auswertung läuft bereits, warten auf den nächsten Zyklus");
+                }
+                if((!tempFileDownloadRunning.exists()) && (!tempFileEvaluationRunning.exists())){
+                    startEvaluation();
+                }
+                String nextEvaluationDateTime = getNextCycleDateTime(
+                    (int)spinnerEvaluateInHours.getValue(), 
+                    (int)spinnerEvaluateInMinutes.getValue()
+                );
+                labelNextEvaluationAt.setText("Auswertung startet um: " + nextEvaluationDateTime);
+            }
+        };
         private ScheduledFuture<?> threadDownloadCycle;
+        private ScheduledFuture<?> threadEvaluationCycle;
         public void actionPerformed(ActionEvent e) {
             if(e.getSource() == buttonChooseHTTrackExe){
                 int result = chooseHTTrackExe.showOpenDialog(GUICountWords.this);
@@ -482,11 +539,10 @@ public class GUICountWords extends JFrame {
             }
             if(e.getSource() == buttonStartDownloadCycle){
                 if(!checkIfDownloadIsPossible()) return;
-                if(!checkIfCycleIsPossible()) return;
+                if(!checkIfDownloadCycleIsPossible()) return;
                 int nextCycleInHours = (int)spinnerDownloadInHours.getValue();
                 int nextCycleInMinutes = (int)spinnerDownloadInMinutes.getValue();
                 int nextCylceCombinedInMinutes = (nextCycleInHours * 60) + nextCycleInMinutes;
-                // if(threadDownloadCycle != null) threadDownloadCycle.cancel(false);
                 threadDownloadCycle = executorService.scheduleAtFixedRate(runnableDownloadCycle, 0, nextCylceCombinedInMinutes, TimeUnit.MINUTES);
                 spinnerDownloadInHours.setEnabled(false);
                 spinnerDownloadInMinutes.setEnabled(false);
@@ -519,6 +575,31 @@ public class GUICountWords extends JFrame {
                     textFieldEvaluationOutputFolder.setText(chooseEvaluationOutputFolder.getSelectedFile().toString());
                 }
             }
+            if(e.getSource() == buttonStartEvaluation){
+                if(!checkIfEvaluationIsPossible()) return;
+                startEvaluation();
+            }
+            if(e.getSource() == buttonStartEvaluationCycle){
+                if(!checkIfEvaluationIsPossible()) return;
+                if(!checkIfEvaluationCycleIsPossible()) return;
+                int nextEvaluationInHours = (int)spinnerEvaluateInHours.getValue();
+                int nextEvaluationInMinutes = (int)spinnerEvaluateInMinutes.getValue();
+                int nextEvaluationCombinedInMinutes = (nextEvaluationInHours * 60) + nextEvaluationInMinutes;
+                threadEvaluationCycle = executorService.scheduleAtFixedRate(runnableEvaluationCycle, 0, nextEvaluationCombinedInMinutes, TimeUnit.MINUTES);
+                spinnerEvaluateInHours.setEnabled(false);
+                spinnerEvaluateInMinutes.setEnabled(false);
+                buttonStartEvaluationCycle.setEnabled(false);
+                buttonStopEvaluationCycle.setEnabled(true);
+            }
+            if(e.getSource() == buttonStopEvaluationCycle){
+                if(threadEvaluationCycle != null) threadEvaluationCycle.cancel(false);
+                labelNextEvaluationAt.setText("");
+                spinnerEvaluateInHours.setEnabled(true);
+                spinnerEvaluateInMinutes.setEnabled(true);
+                buttonStartEvaluationCycle.setEnabled(true);
+                buttonStopEvaluationCycle.setEnabled(false);
+            }
+
         }
         private void Show_Output(Process process) throws IOException {
             BufferedReader output_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -549,11 +630,27 @@ public class GUICountWords extends JFrame {
                 tempFileDownloadRunning.delete();
             } catch (Exception ex) { System.out.println(ex.getMessage()); } 
         }
+        private void startEvaluation(){
+            try{
+                writeSettingsIntoConfigTextfile();
+                String command = "\"%JAVA_HOME%\\bin\\java.exe\" -cp \".\\lib\\*\" \".\\src\\CountWords.java\"";
+                File tempFileEvaluationRunning = new File(".\\EvaluationIsRunning"); 
+                // tempFileEvaluationRunning.createNewFile();
+                System.out.println(command);
+                // Process runtime = Runtime.getRuntime().exec(command);
+                // Show_Output(runtime);
+                // tempFileEvaluationRunning.delete();
+            } catch (Exception ex) { System.out.println(ex.getMessage()); }
+        }
     }
     
     // --------------------------------------------------
-    // Datenbank-Operationen
+    // Event Handling Ende
     // --------------------------------------------------
+    // --------------------------------------------------
+    // Datenbank-Operationen Start
+    // --------------------------------------------------
+
     private Connection conn = null;
     private void connectToDB() {  
         if(conn != null) return;
@@ -630,5 +727,9 @@ public class GUICountWords extends JFrame {
     private void writeSettingsIntoConfigTextfile(){
 
     }
+
+    // --------------------------------------------------
+    // Datenbank-Operationen Ende
+    // --------------------------------------------------
 
 }
