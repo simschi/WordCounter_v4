@@ -20,13 +20,18 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
+import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.SpinnerDateModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
+import javax.swing.JSpinner.DateEditor;
 import javax.swing.border.TitledBorder;
 import javax.swing.plaf.DimensionUIResource;
+import javax.swing.table.TableModel;
 
 import java.awt.Desktop;
 import java.awt.event.ActionListener;
@@ -50,6 +55,7 @@ public class GUICountWords extends JFrame {
     // UI-Elemente
     // --------------------------------------------------
     private JTabbedPane countWordsRegisters;
+    private JScrollPane scrollPaneTableResults;
     private JPanel mainPanel;
     private JPanel searchPanel;
     private JPanel panelDownloadWebsites;
@@ -64,7 +70,9 @@ public class GUICountWords extends JFrame {
     private JPanel panelEvaluationOutputFolder;
     private JPanel panelEvaluationButtons;
     private JPanel panelFilterCriteria;
+    private JPanel panelFilterSearchTerms;
     private JPanel panelSearchResults;
+    private JPanel panelSearchResultsTable;
     private JPanel panelEvaluationOptions;
     private TitledBorder titledBorderDW;
     private TitledBorder titledBorderEval;
@@ -85,6 +93,10 @@ public class GUICountWords extends JFrame {
     private JLabel labelStartEvaluationCycleIn;
     private JLabel labelNextEvaluationAt;
     private JLabel labelTrendAnalysisName;
+    private JLabel labelFilterDateFrom;
+    private JLabel labelFilterDateTo;
+    private JLabel labelFilterWebsites;
+    private JLabel labelFilterSearchTerm;
     private JTextField textFieldWebsiteFile;
     private JTextField textFieldHTTrackExe;
     private JTextField textFieldHTTrackOutputFolder;
@@ -92,6 +104,8 @@ public class GUICountWords extends JFrame {
     private JTextField textFieldTermsFile;
     private JTextField textFieldEvaluationOutputFolder;
     private JTextField textFieldTrendAnalysisName;
+    private JTextField textFieldFilterWebsites;
+    private JTextField textFieldFilterSearchTerm;
     private JButton buttonChooseWebsiteFile;
     private JButton buttonChooseHTTrackExe;
     private JButton buttonChooseHTTrackOutputFolder;
@@ -107,6 +121,7 @@ public class GUICountWords extends JFrame {
     private JButton buttonOpenWebsiteFile;
     private JButton buttonOpenWebsiteFolderFile;
     private JButton buttonOpenTermsFile;
+    private JButton buttonSearch;
     private JRadioButton radioButtonOnlyHTMLFiles;
     private JRadioButton radioButtonAllFiles;
     private ButtonGroup buttonGroupTypeOfFiles;
@@ -116,6 +131,9 @@ public class GUICountWords extends JFrame {
     private JSpinner spinnerDownloadInMinutes;
     private JSpinner spinnerEvaluateInHours;
     private JSpinner spinnerEvaluateInMinutes;
+    private JSpinner spinnerFilterDateFrom;
+    private JSpinner spinnerFilterDateTo;
+    private JTable tableSearchResults; 
     private JFileChooser chooseHTTrackExe; 
     private JFileChooser chooseWebsiteFile;
     private JFileChooser chooseHTTrackOutputFolder;
@@ -172,11 +190,14 @@ public class GUICountWords extends JFrame {
         initComponentEvaluationOptions(panelEvaluation);
         initComponentStartEvaluation(panelEvaluation);
 
+        initComponentFilterCriteria(panelFilterCriteria);
+        initComponentSearchResults(panelSearchResults);
+
         mainPanel.add(panelDownloadWebsites);
         panelEvaluation.setPreferredSize(new DimensionUIResource(panelEvaluation.getWidth(), 65));
         mainPanel.add(panelEvaluation);
         searchPanel.add(panelFilterCriteria);
-        panelSearchResults.setPreferredSize(new DimensionUIResource(panelSearchResults.getWidth(), 200));
+        panelSearchResults.setPreferredSize(new DimensionUIResource(panelSearchResults.getWidth(), 450));
         searchPanel.add(panelSearchResults);
 
         countWordsRegisters.addTab("Programmsteuerung",mainPanel);
@@ -437,6 +458,59 @@ public class GUICountWords extends JFrame {
     }
 
     // --------------------------------------------------
+    // Komponente für Filterkriterien über Suche
+    // --------------------------------------------------
+    private void initComponentFilterCriteria(JPanel addToPanel){
+        panelFilterSearchTerms = new JPanel();
+        labelFilterWebsites = new JLabel("Webseite: ");
+        labelFilterSearchTerm = new JLabel("Wort: ");
+        labelFilterDateFrom = new JLabel("Datum von: ");
+        labelFilterDateTo = new JLabel("Datum bis: ");
+        textFieldFilterWebsites = new JTextField(20);
+        textFieldFilterSearchTerm = new JTextField(20);
+        spinnerFilterDateFrom = new JSpinner(new SpinnerDateModel(new Date(), null, null, Calendar.MONTH));
+        DateEditor editorFilterDateFrom = new DateEditor(spinnerFilterDateFrom, "dd.MM.yyyy");
+        spinnerFilterDateFrom.setEditor(editorFilterDateFrom);
+        spinnerFilterDateTo = new JSpinner(new SpinnerDateModel(new Date(), null, null, Calendar.MONTH));
+        DateEditor editorFilterDateTo = new DateEditor(spinnerFilterDateTo, "dd.MM.yyyy");
+        spinnerFilterDateTo.setEditor(editorFilterDateTo);
+        buttonSearch = new JButton("Suchen");
+
+        panelFilterSearchTerms.setLayout(new FlowLayout());
+        panelFilterSearchTerms.add(labelFilterWebsites);
+        panelFilterSearchTerms.add(textFieldFilterWebsites);
+        panelFilterSearchTerms.add(labelFilterSearchTerm);
+        panelFilterSearchTerms.add(textFieldFilterSearchTerm);
+        panelFilterSearchTerms.add(labelFilterDateFrom);
+        panelFilterSearchTerms.add(spinnerFilterDateFrom);
+        panelFilterSearchTerms.add(labelFilterDateTo);
+        panelFilterSearchTerms.add(spinnerFilterDateTo);
+        buttonSearch.addActionListener(new MyActionListener());
+        panelFilterSearchTerms.add(buttonSearch);
+
+        addToPanel.add(panelFilterSearchTerms);
+    }
+
+    // --------------------------------------------------
+    // Komponente für Suchergebnisse
+    // --------------------------------------------------
+    private void initComponentSearchResults(JPanel addToPanel){
+        panelSearchResultsTable = new JPanel();
+        String columnNames[]={"Wort","Anzahl","Webseite", "Datum"}; 
+        String rowData[][]={ 
+            {"101","Amit","670000", "a"}, 
+            {"102","Jai","780000", "a"},    
+            {"101","Sachin","700000", "a"}};  
+        tableSearchResults = new JTable(rowData, columnNames);
+        scrollPaneTableResults=new JScrollPane(tableSearchResults);    
+        
+        // panelSearchResultsTable.add(tableSearchResults);
+        panelSearchResultsTable.add(scrollPaneTableResults);     
+
+        addToPanel.add(panelSearchResultsTable);
+    }
+
+    // --------------------------------------------------
     // GUI Ende
     // --------------------------------------------------
     // --------------------------------------------------
@@ -684,6 +758,24 @@ public class GUICountWords extends JFrame {
                     Desktop.getDesktop().edit(termsFile);
                 } catch (Exception ex) { System.out.println(ex.getMessage()); }
             }
+            if(e.getSource() == buttonSearch){
+                System.out.println(spinnerFilterDateFrom.getValue().toString());
+                System.out.println(spinnerFilterDateTo.getValue().toString());
+                String columnNames[]={"Wort","Anzahl","Webseite", "Datum"}; 
+                String rowData[][]={ 
+                    {"101","Amit","670000", "a"}, 
+                    {"102","Jai","780000", "a"},    
+                    {"101","Sachin","700000", "a"},
+                    {"102","Alba","720000", "a"}};   
+                searchThroughWordTable(
+                    textFieldFilterSearchTerm.getText(),
+                    textFieldFilterWebsites.getText(),
+                    null,
+                    null
+                );
+                tableSearchResults.removeAll();
+                tableSearchResults.revalidate();
+            }
         }
         private void Show_Output(Process process) throws IOException {
             BufferedReader output_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -756,16 +848,21 @@ public class GUICountWords extends JFrame {
     // --------------------------------------------------
 
     private Connection conn = null;
+    private Connection connWords = null;
     private void connectToDB() {  
         if(conn != null) return;
         try {  
             Class.forName("org.sqlite.JDBC");
-            conn = DriverManager.getConnection("jdbc:sqlite:config.db");    
+            conn = DriverManager.getConnection("jdbc:sqlite:config.db");  
+            connWords = DriverManager.getConnection("jdbc:sqlite:Words.db");  
         } catch (Exception e) {  System.out.println(e.getMessage()); }    
     }
 
     private void disconnectFromDB() {  
-        try { if (conn != null) conn.close(); }
+        try { 
+            if (conn != null) conn.close(); 
+            if (connWords != null) connWords.close();
+        }
         catch (SQLException e) { System.out.println(e.getMessage()); }
     }  
 
@@ -892,6 +989,25 @@ public class GUICountWords extends JFrame {
             pstmt.setString(2, "EvaluationCycleMinutes");
             pstmt.setString(1, spinnerEvaluateInMinutes.getValue().toString());
             pstmt.executeUpdate();
+        } catch (SQLException e) {  System.out.println(e.getMessage()); }
+    }
+
+    private void searchThroughWordTable(String searchTerm, String websiteTerm, Date dateFrom, Date dateTo){
+        try {  
+            PreparedStatement pstmt = connWords.prepareStatement("SELECT word,number,website,date FROM Word "+ 
+                "WHERE word LIKE ? AND website LIKE ? " + 
+                "AND date BETWEEN ? AND ?");
+            pstmt.setString(1, "%" + searchTerm + "%");
+            pstmt.setString(2, "%" + websiteTerm + "%");
+            pstmt.setString(3, "'2022-05-18'");
+            pstmt.setString(4, "'2022-05-22'");
+            ResultSet rs = pstmt.executeQuery();  
+            while(rs.next()){
+                System.out.println(rs.getString("word"));
+                System.out.println(rs.getInt("number"));
+                System.out.println(rs.getString("website"));
+                System.out.println(rs.getString("date"));
+            }
         } catch (SQLException e) {  System.out.println(e.getMessage()); }
     }
 
