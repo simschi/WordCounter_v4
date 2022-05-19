@@ -361,8 +361,8 @@ public class GUICountWords extends JFrame {
     // --------------------------------------------------
     private void initComponentStartEvaluation(JPanel addToPanel){
         panelEvaluationButtons = new JPanel();
-        buttonStartEvaluation = new JButton("Download jetzt starten");
-        labelStartEvaluationCycleIn = new JLabel("Download alle: ");
+        buttonStartEvaluation = new JButton("Auswertung jetzt starten");
+        labelStartEvaluationCycleIn = new JLabel("Auswertung alle: ");
         spinnerEvaluateInHours = new JSpinner(new SpinnerNumberModel(0, 0, 99, 1));
         labelEvaluationHours = new JLabel("Stunden");
         spinnerEvaluateInMinutes = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
@@ -587,6 +587,37 @@ public class GUICountWords extends JFrame {
                 if(key.equals("HTTrackOutputFolder")) {
                     textFieldHTTrackOutputFolder.setText(value);
                     chooseHTTrackOutputFolder.setSelectedFile(new File(value));
+                }
+                if(key.equals("DownloadOnlyHTMLFiles")){
+                    if(value.toLowerCase().equals("yes")){
+                        radioButtonOnlyHTMLFiles.setSelected(true);
+                    } else {
+                        radioButtonAllFiles.setSelected(true);
+                    }
+                }
+                if(key.equals("DownloadCycleHours")){
+                    spinnerDownloadInHours.setValue(Integer.parseInt(value));
+                }
+                if(key.equals("DownloadCycleMinutes")){
+                    spinnerDownloadInMinutes.setValue(Integer.parseInt(value));
+                }
+                if(key.equals("FileWithWebsiteFolders")) {
+                    textFieldEvaluationWebsites.setText(value);
+                    chooseEvaluationWebsites.setSelectedFile(new File(value));
+                }
+                if(key.equals("FileWithTerms")) {
+                    textFieldTermsFile.setText(value);
+                    chooseTermsFile.setSelectedFile(new File(value));
+                }
+                if(key.equals("EvaluationOutputFolder")) {
+                    textFieldEvaluationOutputFolder.setText(value);
+                    chooseEvaluationOutputFolder.setSelectedFile(new File(value));
+                }
+                if(key.equals("EvaluationCycleHours")){
+                    spinnerEvaluateInHours.setValue(Integer.parseInt(value));
+                }
+                if(key.equals("EvaluationCycleMinutes")){
+                    spinnerEvaluateInMinutes.setValue(Integer.parseInt(value));
                 }
             }
         } catch (SQLException e) {  System.out.println(e.getMessage()); }  
