@@ -27,6 +27,7 @@ import javax.swing.SwingConstants;
 import javax.swing.border.TitledBorder;
 import javax.swing.plaf.DimensionUIResource;
 
+import java.awt.Desktop;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
@@ -99,6 +100,9 @@ public class GUICountWords extends JFrame {
     private JButton buttonStartEvaluation;
     private JButton buttonStartEvaluationCycle;
     private JButton buttonStopEvaluationCycle;
+    private JButton buttonOpenWebsiteFile;
+    private JButton buttonOpenWebsiteFolderFile;
+    private JButton buttonOpenTermsFile;
     private JRadioButton radioButtonOnlyHTMLFiles;
     private JRadioButton radioButtonAllFiles;
     private ButtonGroup buttonGroupTypeOfFiles;
@@ -201,9 +205,10 @@ public class GUICountWords extends JFrame {
     private void initComponentChooseWebSiteFile(JPanel addToPanel){
         panelChooseWebsiteFile = new JPanel();
         labelChooseWebsiteFile = new JLabel("Datei mit Webseiten:", SwingConstants.RIGHT);
-        textFieldWebsiteFile = new JTextField(65);
+        textFieldWebsiteFile = new JTextField(50);
         buttonChooseWebsiteFile = new JButton("Datei selektieren...");
         chooseWebsiteFile = new JFileChooser();
+        buttonOpenWebsiteFile = new JButton("Datei bearbeiten...");
 
         panelChooseWebsiteFile.setLayout(new FlowLayout());
         labelChooseWebsiteFile.setPreferredSize(new DimensionUIResource(150, 30));
@@ -213,6 +218,9 @@ public class GUICountWords extends JFrame {
         buttonChooseWebsiteFile.addActionListener(new MyActionListener());
         buttonChooseWebsiteFile.setPreferredSize(new DimensionUIResource(150, 25));
         panelChooseWebsiteFile.add(buttonChooseWebsiteFile);
+        buttonOpenWebsiteFile.addActionListener(new MyActionListener());
+        buttonOpenWebsiteFile.setPreferredSize(new DimensionUIResource(150, 25));
+        panelChooseWebsiteFile.add(buttonOpenWebsiteFile);
 
         addToPanel.add(panelChooseWebsiteFile);
     }
@@ -300,10 +308,11 @@ public class GUICountWords extends JFrame {
     private void initComponentEvaluationWebsites(JPanel addToPanel){
         panelEvaluationWebsites = new JPanel();
         labelEvaluationWebsites = new JLabel("Datei mit Webseitordner:", SwingConstants.RIGHT);
-        textFieldEvaluationWebsites = new JTextField(65);
+        textFieldEvaluationWebsites = new JTextField(50);
         buttonEvaluationWebsites = new JButton("Datei selektieren...");
         chooseEvaluationWebsites = new JFileChooser();
-        
+        buttonOpenWebsiteFolderFile = new JButton("Datei bearbeiten...");
+
         panelEvaluationWebsites.setLayout(new FlowLayout());
         labelEvaluationWebsites.setPreferredSize(new DimensionUIResource(150, 30));
         panelEvaluationWebsites.add(labelEvaluationWebsites);
@@ -312,6 +321,9 @@ public class GUICountWords extends JFrame {
         buttonEvaluationWebsites.addActionListener(new MyActionListener());
         buttonEvaluationWebsites.setPreferredSize(new DimensionUIResource(150, 25));
         panelEvaluationWebsites.add(buttonEvaluationWebsites);
+        buttonOpenWebsiteFolderFile.addActionListener(new MyActionListener());
+        buttonOpenWebsiteFolderFile.setPreferredSize(new DimensionUIResource(150, 25));
+        panelEvaluationWebsites.add(buttonOpenWebsiteFolderFile);
 
         addToPanel.add(panelEvaluationWebsites);
     }
@@ -322,9 +334,10 @@ public class GUICountWords extends JFrame {
     private void initComponentChooseTermsFile(JPanel addToPanel){
         panelChooseTermsFile = new JPanel();
         labelChooseTermsFile = new JLabel("Datei mit Begriffen:", SwingConstants.RIGHT);
-        textFieldTermsFile = new JTextField(65);
+        textFieldTermsFile = new JTextField(50);
         buttonChooseTermsFile = new JButton("Datei selektieren...");
         chooseTermsFile = new JFileChooser();
+        buttonOpenTermsFile = new JButton("Datei bearbeiten...");
 
         panelChooseTermsFile.setLayout(new FlowLayout());
         labelChooseTermsFile.setPreferredSize(new DimensionUIResource(150, 30));
@@ -334,6 +347,9 @@ public class GUICountWords extends JFrame {
         buttonChooseTermsFile.addActionListener(new MyActionListener());
         buttonChooseTermsFile.setPreferredSize(new DimensionUIResource(150, 25));
         panelChooseTermsFile.add(buttonChooseTermsFile);
+        buttonOpenTermsFile.addActionListener(new MyActionListener());
+        buttonOpenTermsFile.setPreferredSize(new DimensionUIResource(150, 25));
+        panelChooseTermsFile.add(buttonOpenTermsFile);
 
         addToPanel.add(panelChooseTermsFile);
     }
@@ -601,7 +617,48 @@ public class GUICountWords extends JFrame {
                 buttonStartEvaluationCycle.setEnabled(true);
                 buttonStopEvaluationCycle.setEnabled(false);
             }
-
+            if(e.getSource() == buttonOpenWebsiteFile){
+                try {
+                    File websiteFile = new File(textFieldWebsiteFile.getText());
+                    if(textFieldWebsiteFile.getText().isEmpty()) {
+                        JOptionPane.showMessageDialog(GUICountWords.this, "Kein Webseitendatei angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    if(!websiteFile.exists()) {
+                        JOptionPane.showMessageDialog(GUICountWords.this, "Die Webseitendatei existiert nicht", "Fehler", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    } 
+                    Desktop.getDesktop().edit(websiteFile);
+                } catch (Exception ex) { System.out.println(ex.getMessage()); }
+            }
+            if(e.getSource() == buttonOpenWebsiteFolderFile){
+                try {
+                    File websiteFolderFile = new File(textFieldEvaluationWebsites.getText());
+                    if(textFieldEvaluationWebsites.getText().isEmpty()) {
+                        JOptionPane.showMessageDialog(GUICountWords.this, "Kein Webseitenordnerdatei angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    if(!websiteFolderFile.exists()) {
+                        JOptionPane.showMessageDialog(GUICountWords.this, "Die Webseitenordnerdatei existiert nicht", "Fehler", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    } 
+                    Desktop.getDesktop().edit(websiteFolderFile);
+                } catch (Exception ex) { System.out.println(ex.getMessage()); }
+            }
+            if(e.getSource() == buttonOpenTermsFile){
+                try {
+                    File termsFile = new File(textFieldTermsFile.getText());
+                    if(textFieldTermsFile.getText().isEmpty()) {
+                        JOptionPane.showMessageDialog(GUICountWords.this, "Kein Begriffe-Datei angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    if(!termsFile.exists()) {
+                        JOptionPane.showMessageDialog(GUICountWords.this, "Die Begriffe-Datei existiert nicht", "Fehler", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    } 
+                    Desktop.getDesktop().edit(termsFile);
+                } catch (Exception ex) { System.out.println(ex.getMessage()); }
+            }
         }
         private void Show_Output(Process process) throws IOException {
             BufferedReader output_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
