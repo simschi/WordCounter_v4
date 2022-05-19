@@ -390,7 +390,7 @@ public class GUICountWords extends JFrame {
     private void initComponentEvaluationOptions(JPanel addToPanel){
         panelEvaluationOptions = new JPanel();
         checkBoxZeroValuesInExcel = new JCheckBox("Nullwerte in Exceldatei ausgeben?");
-        checkBoxTrendAnalysis = new JCheckBox("Daten in Trendanalyse übernehmen?");
+        checkBoxTrendAnalysis = new JCheckBox("Daten in Trendanalyse importieren?");
         labelTrendAnalysisName = new JLabel("Trendanalyse-Name: ");
         textFieldTrendAnalysisName = new JTextField(20);
 
