@@ -39,12 +39,13 @@ public class CountWords {
     // --------------------------------------------------
     // Config-Datei einlesen 
     // --------------------------------------------------
+    private static String downloadedWebsitesFolder;
     private static String fileWithWebsiteFolders;
     private static String fileWithTerms;
-    private static String writeInDatabase;
     private static String backupFolder;
-    private static String downloadedWebsitesFolder;
     private static String zeroValuesInResult;
+    private static String writeInDatabase;
+    private static String trendAnalysisName;
     private static void getDataFromConfigFile() throws Exception{
         File configFile = new File("config.txt");
         BufferedReader reader = new BufferedReader(new FileReader(configFile));
@@ -58,8 +59,9 @@ public class CountWords {
             if(settingName.equals("DateiMitWebseitordnern")) fileWithWebsiteFolders = settingValue;
             if(settingName.equals("DateiMitBegriffen")) fileWithTerms = settingValue; 
             if(settingName.equals("AuswertungsOrdner")) backupFolder = settingValue;
-            if(settingName.equals("InDatenbankSchreiben")) writeInDatabase = settingValue;
             if(settingName.equals("NullWerteInErgebnisMitaufnehmen")) zeroValuesInResult = settingValue;
+            if(settingName.equals("InDatenbankSchreiben")) writeInDatabase = settingValue;
+            if(settingName.equals("TrendAnalysisName")) trendAnalysisName = settingValue;
         }
         reader.close();
     } 
@@ -249,12 +251,13 @@ public class CountWords {
 
         Class.forName(driver);
         Connection conn = DriverManager.getConnection(url);
-        PreparedStatement prep = conn.prepareStatement("insert into word values (?, ?, ?, ?, ?);");
+        PreparedStatement prep = conn.prepareStatement("insert into word values (?, ?, ?, ?, ?, ?);");
         for (Map.Entry<String, Integer> foundWord : foundWordsWebsites.entrySet()) {
             prep.setString(2, foundWord.getKey().split(";")[0]);
             prep.setInt(3, foundWord.getValue());
             prep.setString(4, foundWord.getKey().split(";")[1]);
             prep.setString(5, currentDate);
+            prep.setString(6, trendAnalysisName);
             prep.addBatch();
         }
 

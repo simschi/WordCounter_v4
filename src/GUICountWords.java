@@ -13,6 +13,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -64,6 +65,7 @@ public class GUICountWords extends JFrame {
     private JPanel panelEvaluationButtons;
     private JPanel panelFilterCriteria;
     private JPanel panelSearchResults;
+    private JPanel panelEvaluationOptions;
     private TitledBorder titledBorderDW;
     private TitledBorder titledBorderEval;
     private TitledBorder titledBorderFilterCriteria;
@@ -82,12 +84,14 @@ public class GUICountWords extends JFrame {
     private JLabel labelEvaluationMinutes; 
     private JLabel labelStartEvaluationCycleIn;
     private JLabel labelNextEvaluationAt;
+    private JLabel labelTrendAnalysisName;
     private JTextField textFieldWebsiteFile;
     private JTextField textFieldHTTrackExe;
     private JTextField textFieldHTTrackOutputFolder;
     private JTextField textFieldEvaluationWebsites;
     private JTextField textFieldTermsFile;
     private JTextField textFieldEvaluationOutputFolder;
+    private JTextField textFieldTrendAnalysisName;
     private JButton buttonChooseWebsiteFile;
     private JButton buttonChooseHTTrackExe;
     private JButton buttonChooseHTTrackOutputFolder;
@@ -106,6 +110,8 @@ public class GUICountWords extends JFrame {
     private JRadioButton radioButtonOnlyHTMLFiles;
     private JRadioButton radioButtonAllFiles;
     private ButtonGroup buttonGroupTypeOfFiles;
+    private JCheckBox checkBoxZeroValuesInExcel;
+    private JCheckBox checkBoxTrendAnalysis;
     private JSpinner spinnerDownloadInHours;
     private JSpinner spinnerDownloadInMinutes;
     private JSpinner spinnerEvaluateInHours;
@@ -124,7 +130,7 @@ public class GUICountWords extends JFrame {
     public GUICountWords(){
         setTitle("Word Counter");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1024,512);
+        setSize(1024,576);
         
         initComponentMainPanelAndOthers();
         addWindowEvents();
@@ -163,10 +169,11 @@ public class GUICountWords extends JFrame {
         initComponentEvaluationWebsites(panelEvaluation);
         initComponentChooseTermsFile(panelEvaluation);
         initComponentChooseEvaluationOutputFolder(panelEvaluation);
+        initComponentEvaluationOptions(panelEvaluation);
         initComponentStartEvaluation(panelEvaluation);
 
         mainPanel.add(panelDownloadWebsites);
-        panelEvaluation.setPreferredSize(new DimensionUIResource(panelEvaluation.getWidth(), 40));
+        panelEvaluation.setPreferredSize(new DimensionUIResource(panelEvaluation.getWidth(), 65));
         mainPanel.add(panelEvaluation);
         searchPanel.add(panelFilterCriteria);
         panelSearchResults.setPreferredSize(new DimensionUIResource(panelSearchResults.getWidth(), 200));
@@ -375,6 +382,24 @@ public class GUICountWords extends JFrame {
         panelEvaluationOutputFolder.add(buttonEvaluationOutputFolder);
 
         addToPanel.add(panelEvaluationOutputFolder);
+    }
+    
+    // --------------------------------------------------
+    // Komponente für Auswertungsoptionen 
+    // --------------------------------------------------
+    private void initComponentEvaluationOptions(JPanel addToPanel){
+        panelEvaluationOptions = new JPanel();
+        checkBoxZeroValuesInExcel = new JCheckBox("Nullwerte in Exceldatei ausgeben?");
+        checkBoxTrendAnalysis = new JCheckBox("Daten in Trendanalyse übernehmen?");
+        labelTrendAnalysisName = new JLabel("Trendanalyse-Name: ");
+        textFieldTrendAnalysisName = new JTextField(20);
+
+        panelEvaluationOptions.add(checkBoxZeroValuesInExcel);
+        panelEvaluationOptions.add(checkBoxTrendAnalysis);
+        panelEvaluationOptions.add(labelTrendAnalysisName);
+        panelEvaluationOptions.add(textFieldTrendAnalysisName);
+
+        addToPanel.add(panelEvaluationOptions);
     }
 
     // --------------------------------------------------
@@ -699,8 +724,11 @@ public class GUICountWords extends JFrame {
                 myWriter.write("DateiMitWebseitordnern=" + textFieldEvaluationWebsites.getText() + "\r\n");
                 myWriter.write("DateiMitBegriffen=" + textFieldTermsFile.getText() + "\r\n");
                 myWriter.write("AuswertungsOrdner=" + textFieldEvaluationOutputFolder.getText() + "\r\n"); 
-                myWriter.write("InDatenbankSchreiben=Ja" + "\r\n");
-                myWriter.write("NullWerteInErgebnisMitaufnehmen=Ja" + "\r\n");
+                String zeroValuesInResult = checkBoxZeroValuesInExcel.isSelected() ? "Ja" : "Nein";
+                myWriter.write("NullWerteInErgebnisMitaufnehmen=" + zeroValuesInResult + "\r\n");
+                String doTrendAnalysis = checkBoxTrendAnalysis.isSelected() ? "Ja" : "Nein";
+                myWriter.write("InDatenbankSchreiben=" + doTrendAnalysis + "\r\n");
+                myWriter.write("TrendAnalysisName=" + textFieldTrendAnalysisName + "\r\n");
                 myWriter.close();
             } catch (IOException e) { e.printStackTrace(); }
         }
@@ -782,6 +810,15 @@ public class GUICountWords extends JFrame {
                     textFieldTermsFile.setText(value);
                     chooseTermsFile.setSelectedFile(new File(value));
                 }
+                if(key.equals("ZeroValuesInExcel")) {
+                    checkBoxZeroValuesInExcel.setSelected(value.toLowerCase().equals("yes"));
+                }
+                if(key.equals("DoTrendAnalysis")) {
+                    checkBoxTrendAnalysis.setSelected(value.toLowerCase().equals("yes"));
+                }
+                if(key.equals("TrendAnalysisName")) {
+                    textFieldTrendAnalysisName.setText(value);
+                }
                 if(key.equals("EvaluationOutputFolder")) {
                     textFieldEvaluationOutputFolder.setText(value);
                     chooseEvaluationOutputFolder.setSelectedFile(new File(value));
@@ -830,6 +867,18 @@ public class GUICountWords extends JFrame {
             pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
             pstmt.setString(2, "FileWithTerms");
             pstmt.setString(1, textFieldTermsFile.getText());
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
+            pstmt.setString(2, "ZeroValuesInExcel");
+            pstmt.setString(1, checkBoxZeroValuesInExcel.isSelected() ? "yes" : "no");
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
+            pstmt.setString(2, "DoTrendAnalysis");
+            pstmt.setString(1, checkBoxTrendAnalysis.isSelected() ? "yes" : "no");
+            pstmt.executeUpdate();
+            pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
+            pstmt.setString(2, "TrendAnalysisName");
+            pstmt.setString(1, textFieldTrendAnalysisName.getText());
             pstmt.executeUpdate();
             pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
             pstmt.setString(2, "EvaluationOutputFolder");
