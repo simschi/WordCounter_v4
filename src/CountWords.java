@@ -329,5 +329,6 @@ public class CountWords {
         }
         writeFoundWordsExcel();
         writeFoundWordsInDatabase(); 
+        System.out.println("Auswertung fertiggestellt");
     }
 }
