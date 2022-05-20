@@ -2,6 +2,6 @@ AuszuwertenderOrdner=C:\Tmp\CMDHttrack
 DateiMitWebseitordnern=C:\Tmp\WebseitenOrdner.txt
 DateiMitBegriffen=C:\Tmp\Begriffe.xlsx
 AuswertungsOrdner=C:\Tmp\Auswertungen
-NullWerteInErgebnisMitaufnehmen=Ja
+NullWerteInErgebnisMitaufnehmen=Nein
 InDatenbankSchreiben=Ja
 TrendAnalysisName=Test

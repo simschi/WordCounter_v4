@@ -31,7 +31,8 @@ import javax.swing.SwingConstants;
 import javax.swing.JSpinner.DateEditor;
 import javax.swing.border.TitledBorder;
 import javax.swing.plaf.DimensionUIResource;
-import javax.swing.table.TableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 
 import java.awt.Desktop;
 import java.awt.event.ActionListener;
@@ -133,6 +134,7 @@ public class GUICountWords extends JFrame {
     private JSpinner spinnerEvaluateInMinutes;
     private JSpinner spinnerFilterDateFrom;
     private JSpinner spinnerFilterDateTo;
+    private DefaultTableModel modelSearchResults;
     private JTable tableSearchResults; 
     private JFileChooser chooseHTTrackExe; 
     private JFileChooser chooseWebsiteFile;
@@ -477,10 +479,10 @@ public class GUICountWords extends JFrame {
         buttonSearch = new JButton("Suchen");
 
         panelFilterSearchTerms.setLayout(new FlowLayout());
-        panelFilterSearchTerms.add(labelFilterWebsites);
-        panelFilterSearchTerms.add(textFieldFilterWebsites);
         panelFilterSearchTerms.add(labelFilterSearchTerm);
         panelFilterSearchTerms.add(textFieldFilterSearchTerm);
+        panelFilterSearchTerms.add(labelFilterWebsites);
+        panelFilterSearchTerms.add(textFieldFilterWebsites);
         panelFilterSearchTerms.add(labelFilterDateFrom);
         panelFilterSearchTerms.add(spinnerFilterDateFrom);
         panelFilterSearchTerms.add(labelFilterDateTo);
@@ -495,16 +497,20 @@ public class GUICountWords extends JFrame {
     // Komponente für Suchergebnisse
     // --------------------------------------------------
     private void initComponentSearchResults(JPanel addToPanel){
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         panelSearchResultsTable = new JPanel();
         String columnNames[]={"Wort","Anzahl","Webseite", "Datum"}; 
-        String rowData[][]={ 
-            {"101","Amit","670000", "a"}, 
-            {"102","Jai","780000", "a"},    
-            {"101","Sachin","700000", "a"}};  
-        tableSearchResults = new JTable(rowData, columnNames);
+        modelSearchResults = new DefaultTableModel(columnNames, 0);
+        tableSearchResults = new JTable(modelSearchResults);
         scrollPaneTableResults=new JScrollPane(tableSearchResults);    
-        
-        // panelSearchResultsTable.add(tableSearchResults);
+
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        tableSearchResults.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
+        tableSearchResults.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
+        tableSearchResults.getColumnModel().getColumn(2).setCellRenderer(centerRenderer);
+        tableSearchResults.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
+
+        scrollPaneTableResults.setPreferredSize(new DimensionUIResource(950, 400));
         panelSearchResultsTable.add(scrollPaneTableResults);     
 
         addToPanel.add(panelSearchResultsTable);
@@ -759,22 +765,19 @@ public class GUICountWords extends JFrame {
                 } catch (Exception ex) { System.out.println(ex.getMessage()); }
             }
             if(e.getSource() == buttonSearch){
-                System.out.println(spinnerFilterDateFrom.getValue().toString());
-                System.out.println(spinnerFilterDateTo.getValue().toString());
-                String columnNames[]={"Wort","Anzahl","Webseite", "Datum"}; 
-                String rowData[][]={ 
-                    {"101","Amit","670000", "a"}, 
-                    {"102","Jai","780000", "a"},    
-                    {"101","Sachin","700000", "a"},
-                    {"102","Alba","720000", "a"}};   
+                File tempFileEvaluationRunning = new File(".\\EvaluationIsRunning"); 
+                if(tempFileEvaluationRunning.exists()){
+                    System.out.println("Es wird gerade eine Auswertung gemacht");
+                    return; 
+                }
+                SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                modelSearchResults.setRowCount(0);
                 searchThroughWordTable(
                     textFieldFilterSearchTerm.getText(),
                     textFieldFilterWebsites.getText(),
-                    null,
-                    null
+                    dateFormat.format((Date)spinnerFilterDateFrom.getValue()),
+                    dateFormat.format((Date)spinnerFilterDateTo.getValue())
                 );
-                tableSearchResults.removeAll();
-                tableSearchResults.revalidate();
             }
         }
         private void Show_Output(Process process) throws IOException {
@@ -992,22 +995,25 @@ public class GUICountWords extends JFrame {
         } catch (SQLException e) {  System.out.println(e.getMessage()); }
     }
 
-    private void searchThroughWordTable(String searchTerm, String websiteTerm, Date dateFrom, Date dateTo){
+    private void searchThroughWordTable(String searchTerm, String websiteTerm, String dateFrom, String dateTo){
         try {  
             PreparedStatement pstmt = connWords.prepareStatement("SELECT word,number,website,date FROM Word "+ 
                 "WHERE word LIKE ? AND website LIKE ? " + 
                 "AND date BETWEEN ? AND ?");
             pstmt.setString(1, "%" + searchTerm + "%");
             pstmt.setString(2, "%" + websiteTerm + "%");
-            pstmt.setString(3, "'2022-05-18'");
-            pstmt.setString(4, "'2022-05-22'");
+            pstmt.setString(3, dateFrom);
+            pstmt.setString(4, dateTo);
             ResultSet rs = pstmt.executeQuery();  
             while(rs.next()){
-                System.out.println(rs.getString("word"));
-                System.out.println(rs.getInt("number"));
-                System.out.println(rs.getString("website"));
-                System.out.println(rs.getString("date"));
+                String rowData[]={
+                    rs.getString("word"),
+                    Integer.toString(rs.getInt("number")),
+                    rs.getString("website"),
+                    rs.getString("date")}; 
+                modelSearchResults.addRow(rowData);
             }
+
         } catch (SQLException e) {  System.out.println(e.getMessage()); }
     }
 
