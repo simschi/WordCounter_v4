@@ -500,7 +500,11 @@ public class GUICountWords extends JFrame {
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         panelSearchResultsTable = new JPanel();
         String columnNames[]={"Wort","Anzahl","Webseite", "Datum"}; 
-        modelSearchResults = new DefaultTableModel(columnNames, 0);
+        modelSearchResults = new DefaultTableModel(columnNames, 0){
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return false;
+            }
+        };
         tableSearchResults = new JTable(modelSearchResults);
         scrollPaneTableResults=new JScrollPane(tableSearchResults);    
 
