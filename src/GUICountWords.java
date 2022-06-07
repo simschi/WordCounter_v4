@@ -285,7 +285,7 @@ public class GUICountWords extends JFrame {
         panelHTTrackOptions = new JPanel(); 
         radioButtonOnlyHTMLFiles = new JRadioButton("Nur HTML-Dateien");
         radioButtonOnlyHTMLFiles.setSelected(true);
-        radioButtonAllFiles = new JRadioButton("Alle Dateien");
+        radioButtonAllFiles = new JRadioButton("HTML-Dateien mit Bildern");
         buttonGroupTypeOfFiles = new ButtonGroup();
         buttonGroupTypeOfFiles.add(radioButtonOnlyHTMLFiles);
         buttonGroupTypeOfFiles.add(radioButtonAllFiles);
