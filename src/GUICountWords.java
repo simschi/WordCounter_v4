@@ -40,6 +40,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
+import java.io.Console;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -774,7 +775,7 @@ public class GUICountWords extends JFrame {
                     System.out.println("Es wird gerade eine Auswertung gemacht");
                     return; 
                 }
-                SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
                 modelSearchResults.setRowCount(0);
                 searchThroughWordTable(
                     textFieldFilterSearchTerm.getText(),
@@ -1003,7 +1004,7 @@ public class GUICountWords extends JFrame {
         try {  
             PreparedStatement pstmt = connWords.prepareStatement("SELECT word,number,website,date FROM Word "+ 
                 "WHERE word LIKE ? AND website LIKE ? " + 
-                "AND date BETWEEN ? AND ?");
+                "AND substr(date,7)||substr(date,4,2)||substr(date,1,2) BETWEEN ? AND ?");
             pstmt.setString(1, "%" + searchTerm + "%");
             pstmt.setString(2, "%" + websiteTerm + "%");
             pstmt.setString(3, dateFrom);
