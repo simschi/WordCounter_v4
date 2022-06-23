@@ -83,14 +83,14 @@ public class GUICountWords extends JFrame {
     private JLabel labelHTTrackExe;
     private JLabel labelHTTrackOutputFolder;
     private JLabel labelStartDownloadCycleIn;
+    private JLabel labelDownloadDays; 
     private JLabel labelDownloadHours;
-    private JLabel labelDownloadMinutes; 
     private JLabel labelNextDownloadAt;
     private JLabel labelEvaluationWebsites; 
     private JLabel labelChooseTermsFile;
     private JLabel labelEvaluationOutputFolder;
+    private JLabel labelEvaluationDays; 
     private JLabel labelEvaluationHours;
-    private JLabel labelEvaluationMinutes; 
     private JLabel labelStartEvaluationCycleIn;
     private JLabel labelNextEvaluationAt;
     private JLabel labelTrendAnalysisName;
@@ -128,10 +128,10 @@ public class GUICountWords extends JFrame {
     private ButtonGroup buttonGroupTypeOfFiles;
     private JCheckBox checkBoxZeroValuesInExcel;
     private JCheckBox checkBoxTrendAnalysis;
+    private JSpinner spinnerDownloadInDays;
     private JSpinner spinnerDownloadInHours;
-    private JSpinner spinnerDownloadInMinutes;
+    private JSpinner spinnerEvaluateInDays;
     private JSpinner spinnerEvaluateInHours;
-    private JSpinner spinnerEvaluateInMinutes;
     private JSpinner spinnerFilterDateFrom;
     private JSpinner spinnerFilterDateTo;
     private DefaultTableModel modelSearchResults;
@@ -305,10 +305,10 @@ public class GUICountWords extends JFrame {
         panelDownloadWebsitesButtons = new JPanel();
         buttonStartHTTrack = new JButton("Download jetzt starten");
         labelStartDownloadCycleIn = new JLabel("Download alle: ");
+        spinnerDownloadInDays = new JSpinner(new SpinnerNumberModel(0, 0, 31, 1));
+        labelDownloadDays = new JLabel("Tage");
         spinnerDownloadInHours = new JSpinner(new SpinnerNumberModel(0, 0, 99, 1));
         labelDownloadHours = new JLabel("Stunden");
-        spinnerDownloadInMinutes = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
-        labelDownloadMinutes = new JLabel("Minuten");
         buttonStartDownloadCycle = new JButton("Zyklus starten");
         buttonStopDownloadCycle = new JButton("Zyklus stoppen");
         labelNextDownloadAt = new JLabel();
@@ -318,10 +318,10 @@ public class GUICountWords extends JFrame {
         buttonStartHTTrack.addActionListener(new MyActionListener());
         panelDownloadWebsitesButtons.add(buttonStartHTTrack);
         panelDownloadWebsitesButtons.add(labelStartDownloadCycleIn);
+        panelDownloadWebsitesButtons.add(spinnerDownloadInDays);
+        panelDownloadWebsitesButtons.add(labelDownloadDays);
         panelDownloadWebsitesButtons.add(spinnerDownloadInHours);
         panelDownloadWebsitesButtons.add(labelDownloadHours);
-        panelDownloadWebsitesButtons.add(spinnerDownloadInMinutes);
-        panelDownloadWebsitesButtons.add(labelDownloadMinutes);
         buttonStartDownloadCycle.addActionListener(new MyActionListener());
         panelDownloadWebsitesButtons.add(buttonStartDownloadCycle);
         buttonStopDownloadCycle.addActionListener(new MyActionListener());
@@ -337,7 +337,7 @@ public class GUICountWords extends JFrame {
     // --------------------------------------------------
     private void initComponentEvaluationWebsites(JPanel addToPanel){
         panelEvaluationWebsites = new JPanel();
-        labelEvaluationWebsites = new JLabel("Datei mit Webseitordner:", SwingConstants.RIGHT);
+        labelEvaluationWebsites = new JLabel("Datei mit Webseitenordner:", SwingConstants.RIGHT);
         textFieldEvaluationWebsites = new JTextField(50);
         buttonEvaluationWebsites = new JButton("Datei selektieren...");
         chooseEvaluationWebsites = new JFileChooser();
@@ -432,10 +432,10 @@ public class GUICountWords extends JFrame {
         panelEvaluationButtons = new JPanel();
         buttonStartEvaluation = new JButton("Auswertung jetzt starten");
         labelStartEvaluationCycleIn = new JLabel("Auswertung alle: ");
+        spinnerEvaluateInDays = new JSpinner(new SpinnerNumberModel(0, 0, 31, 1));
+        labelEvaluationDays = new JLabel("Tage");
         spinnerEvaluateInHours = new JSpinner(new SpinnerNumberModel(0, 0, 99, 1));
         labelEvaluationHours = new JLabel("Stunden");
-        spinnerEvaluateInMinutes = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
-        labelEvaluationMinutes = new JLabel("Minuten");
         buttonStartEvaluationCycle = new JButton("Zyklus starten");
         buttonStopEvaluationCycle = new JButton("Zyklus stoppen");
         labelNextEvaluationAt = new JLabel();
@@ -445,10 +445,10 @@ public class GUICountWords extends JFrame {
         buttonStartEvaluation.addActionListener(new MyActionListener());
         panelEvaluationButtons.add(buttonStartEvaluation);
         panelEvaluationButtons.add(labelStartEvaluationCycleIn);
+        panelEvaluationButtons.add(spinnerEvaluateInDays);
+        panelEvaluationButtons.add(labelEvaluationDays);
         panelEvaluationButtons.add(spinnerEvaluateInHours);
         panelEvaluationButtons.add(labelEvaluationHours);
-        panelEvaluationButtons.add(spinnerEvaluateInMinutes);
-        panelEvaluationButtons.add(labelEvaluationMinutes);
         buttonStartEvaluationCycle.addActionListener(new MyActionListener());
         panelEvaluationButtons.add(buttonStartEvaluationCycle);
         buttonStopEvaluationCycle.addActionListener(new MyActionListener());
@@ -566,7 +566,7 @@ public class GUICountWords extends JFrame {
             return true; 
         }
         private boolean checkIfDownloadCycleIsPossible(){
-            if(((int)spinnerDownloadInHours.getValue() < 1) && ((int)spinnerDownloadInMinutes.getValue() < 1)){
+            if(((int)spinnerDownloadInDays.getValue() < 1) && ((int)spinnerDownloadInHours.getValue() < 1)){
                 JOptionPane.showMessageDialog(GUICountWords.this, "Zykluswert muss größer 0 sein", "Fehler", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
@@ -592,7 +592,7 @@ public class GUICountWords extends JFrame {
             return true;
         }
         private boolean checkIfEvaluationCycleIsPossible(){
-            if(((int)spinnerEvaluateInHours.getValue() < 1) && ((int)spinnerEvaluateInMinutes.getValue() < 1)){
+            if(((int)spinnerEvaluateInDays.getValue() < 1) && ((int)spinnerEvaluateInHours.getValue() < 1)){
                 JOptionPane.showMessageDialog(GUICountWords.this, "Zykluswert muss größer 0 sein", "Fehler", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
@@ -613,8 +613,8 @@ public class GUICountWords extends JFrame {
                     startHTTrackDownload();
                 }
                 String nextCycleDateTime = getNextCycleDateTime(
-                    (int)spinnerDownloadInHours.getValue(), 
-                    (int)spinnerDownloadInMinutes.getValue()
+                    (int)spinnerDownloadInDays.getValue(),
+                    (int)spinnerDownloadInHours.getValue()
                 );
                 labelNextDownloadAt.setText("Download startet um: " + nextCycleDateTime);
             }
@@ -633,8 +633,8 @@ public class GUICountWords extends JFrame {
                     startEvaluation();
                 }
                 String nextEvaluationDateTime = getNextCycleDateTime(
-                    (int)spinnerEvaluateInHours.getValue(), 
-                    (int)spinnerEvaluateInMinutes.getValue()
+                    (int)spinnerEvaluateInDays.getValue(),    
+                    (int)spinnerEvaluateInHours.getValue() 
                 );
                 labelNextEvaluationAt.setText("Auswertung startet um: " + nextEvaluationDateTime);
             }
@@ -667,20 +667,20 @@ public class GUICountWords extends JFrame {
             if(e.getSource() == buttonStartDownloadCycle){
                 if(!checkIfDownloadIsPossible()) return;
                 if(!checkIfDownloadCycleIsPossible()) return;
+                int nextCycleInDays = (int)spinnerDownloadInDays.getValue();
                 int nextCycleInHours = (int)spinnerDownloadInHours.getValue();
-                int nextCycleInMinutes = (int)spinnerDownloadInMinutes.getValue();
-                int nextCylceCombinedInMinutes = (nextCycleInHours * 60) + nextCycleInMinutes;
-                threadDownloadCycle = executorService.scheduleAtFixedRate(runnableDownloadCycle, 0, nextCylceCombinedInMinutes, TimeUnit.MINUTES);
+                int nextCycleCombinedInHours = (nextCycleInDays * 24) + nextCycleInHours;
+                threadDownloadCycle = executorService.scheduleAtFixedRate(runnableDownloadCycle, 0, nextCycleCombinedInHours, TimeUnit.HOURS);
+                spinnerDownloadInDays.setEnabled(false);
                 spinnerDownloadInHours.setEnabled(false);
-                spinnerDownloadInMinutes.setEnabled(false);
                 buttonStartDownloadCycle.setEnabled(false);
                 buttonStopDownloadCycle.setEnabled(true);
             }
             if(e.getSource() == buttonStopDownloadCycle){
                 if(threadDownloadCycle != null) threadDownloadCycle.cancel(false);
                 labelNextDownloadAt.setText("");
+                spinnerDownloadInDays.setEnabled(true);
                 spinnerDownloadInHours.setEnabled(true);
-                spinnerDownloadInMinutes.setEnabled(true);
                 buttonStartDownloadCycle.setEnabled(true);
                 buttonStopDownloadCycle.setEnabled(false);
             }
@@ -709,20 +709,20 @@ public class GUICountWords extends JFrame {
             if(e.getSource() == buttonStartEvaluationCycle){
                 if(!checkIfEvaluationIsPossible()) return;
                 if(!checkIfEvaluationCycleIsPossible()) return;
+                int nextEvaluationInDays = (int)spinnerEvaluateInDays.getValue();
                 int nextEvaluationInHours = (int)spinnerEvaluateInHours.getValue();
-                int nextEvaluationInMinutes = (int)spinnerEvaluateInMinutes.getValue();
-                int nextEvaluationCombinedInMinutes = (nextEvaluationInHours * 60) + nextEvaluationInMinutes;
-                threadEvaluationCycle = executorService.scheduleAtFixedRate(runnableEvaluationCycle, 0, nextEvaluationCombinedInMinutes, TimeUnit.MINUTES);
+                int nextEvaluationCombinedInHours = (nextEvaluationInDays * 24) + nextEvaluationInHours;
+                threadEvaluationCycle = executorService.scheduleAtFixedRate(runnableEvaluationCycle, 0, nextEvaluationCombinedInHours, TimeUnit.HOURS);
+                spinnerEvaluateInDays.setEnabled(false);
                 spinnerEvaluateInHours.setEnabled(false);
-                spinnerEvaluateInMinutes.setEnabled(false);
                 buttonStartEvaluationCycle.setEnabled(false);
                 buttonStopEvaluationCycle.setEnabled(true);
             }
             if(e.getSource() == buttonStopEvaluationCycle){
                 if(threadEvaluationCycle != null) threadEvaluationCycle.cancel(false);
                 labelNextEvaluationAt.setText("");
+                spinnerEvaluateInDays.setEnabled(true);
                 spinnerEvaluateInHours.setEnabled(true);
-                spinnerEvaluateInMinutes.setEnabled(true);
                 buttonStartEvaluationCycle.setEnabled(true);
                 buttonStopEvaluationCycle.setEnabled(false);
             }
@@ -791,12 +791,12 @@ public class GUICountWords extends JFrame {
                 System.out.println(output);
             }
         }
-        private String getNextCycleDateTime(int inHours, int inMinutes){
+        private String getNextCycleDateTime(int inDays, int inHours){
             SimpleDateFormat dateTimeFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
             Calendar cal = Calendar.getInstance(); 
             cal.setTime(new Date());
+            cal.add(Calendar.DATE, inDays);
             cal.add(Calendar.HOUR_OF_DAY, inHours);    
-            cal.add(Calendar.MINUTE, inMinutes);  
             return dateTimeFormat.format(cal.getTime());
         }
         private void startHTTrackDownload(){
@@ -900,11 +900,11 @@ public class GUICountWords extends JFrame {
                         radioButtonAllFiles.setSelected(true);
                     }
                 }
+                if(key.equals("DownloadCycleDays")){
+                    spinnerDownloadInDays.setValue(Integer.parseInt(value));
+                }
                 if(key.equals("DownloadCycleHours")){
                     spinnerDownloadInHours.setValue(Integer.parseInt(value));
-                }
-                if(key.equals("DownloadCycleMinutes")){
-                    spinnerDownloadInMinutes.setValue(Integer.parseInt(value));
                 }
                 if(key.equals("FileWithWebsiteFolders")) {
                     textFieldEvaluationWebsites.setText(value);
@@ -927,11 +927,11 @@ public class GUICountWords extends JFrame {
                     textFieldEvaluationOutputFolder.setText(value);
                     chooseEvaluationOutputFolder.setSelectedFile(new File(value));
                 }
+                if(key.equals("EvaluationCycleDays")){
+                    spinnerEvaluateInDays.setValue(Integer.parseInt(value));
+                }
                 if(key.equals("EvaluationCycleHours")){
                     spinnerEvaluateInHours.setValue(Integer.parseInt(value));
-                }
-                if(key.equals("EvaluationCycleMinutes")){
-                    spinnerEvaluateInMinutes.setValue(Integer.parseInt(value));
                 }
             }
         } catch (SQLException e) {  System.out.println(e.getMessage()); }  
@@ -957,12 +957,12 @@ public class GUICountWords extends JFrame {
             pstmt.setString(1, radioButtonOnlyHTMLFiles.isSelected() ? "yes" : "no");
             pstmt.executeUpdate();
             pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
-            pstmt.setString(2, "DownloadCycleHours");
-            pstmt.setString(1, spinnerDownloadInHours.getValue().toString());
+            pstmt.setString(2, "DownloadCycleDays");
+            pstmt.setString(1, spinnerDownloadInDays.getValue().toString());
             pstmt.executeUpdate();
             pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
-            pstmt.setString(2, "DownloadCycleMinutes");
-            pstmt.setString(1, spinnerDownloadInMinutes.getValue().toString());
+            pstmt.setString(2, "DownloadCycleHours");
+            pstmt.setString(1, spinnerDownloadInHours.getValue().toString());
             pstmt.executeUpdate();
             pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
             pstmt.setString(2, "FileWithWebsiteFolders");
@@ -989,12 +989,12 @@ public class GUICountWords extends JFrame {
             pstmt.setString(1, textFieldEvaluationOutputFolder.getText());
             pstmt.executeUpdate();
             pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
-            pstmt.setString(2, "EvaluationCycleHours");
-            pstmt.setString(1, spinnerEvaluateInHours.getValue().toString());
+            pstmt.setString(2, "EvaluationCycleDays");
+            pstmt.setString(1, spinnerEvaluateInDays.getValue().toString());
             pstmt.executeUpdate();
             pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
-            pstmt.setString(2, "EvaluationCycleMinutes");
-            pstmt.setString(1, spinnerEvaluateInMinutes.getValue().toString());
+            pstmt.setString(2, "EvaluationCycleHours");
+            pstmt.setString(1, spinnerEvaluateInHours.getValue().toString());
             pstmt.executeUpdate();
         } catch (SQLException e) {  System.out.println(e.getMessage()); }
     }
