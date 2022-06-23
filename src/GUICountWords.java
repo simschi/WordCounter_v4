@@ -337,7 +337,7 @@ public class GUICountWords extends JFrame {
     // --------------------------------------------------
     private void initComponentEvaluationWebsites(JPanel addToPanel){
         panelEvaluationWebsites = new JPanel();
-        labelEvaluationWebsites = new JLabel("Datei mit Webseitenordner:", SwingConstants.RIGHT);
+        labelEvaluationWebsites = new JLabel("Datei m Webseitenordner:", SwingConstants.RIGHT);
         textFieldEvaluationWebsites = new JTextField(50);
         buttonEvaluationWebsites = new JButton("Datei selektieren...");
         chooseEvaluationWebsites = new JFileChooser();
