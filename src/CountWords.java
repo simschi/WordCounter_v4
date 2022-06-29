@@ -83,27 +83,17 @@ public class CountWords {
     }
 
     // --------------------------------------------------
-    // Zu suchende Begriffe von Excel-Datei einlesen
+    // Zu suchende Begriffe einlesen
     // --------------------------------------------------
     private static List<String> getSearchTerms() throws Exception{
-        // Excel-Datei einlesen
-        FileInputStream file = new FileInputStream(new File(fileWithTerms));
-        XSSFWorkbook workbook = new XSSFWorkbook(file);
-        XSSFSheet sheet = workbook.getSheetAt(0);
         List<String> terms = new ArrayList<String>();
-
-        // Daten aus Excel-Datei einlesen
-        Iterator<Row> rowIterator = sheet.iterator();
-        while (rowIterator.hasNext()) {
-            Row row = rowIterator.next();
-            Iterator<Cell> cellIterator = row.cellIterator();
-            while (cellIterator.hasNext()) {
-                Cell cell = cellIterator.next();
-                terms.add(cell.getStringCellValue());
-            }
+        File termsFileName = new File(fileWithTerms);
+        BufferedReader reader = new BufferedReader(new FileReader(termsFileName));
+        String term;
+        while ((term = reader.readLine()) != null) {
+            terms.add(term);
         }
-        workbook.close();
-        file.close();
+        reader.close();
         copyFileInCurrentBackupDir(fileWithTerms);
         return terms;
     }

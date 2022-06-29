@@ -1,6 +1,6 @@
 AuszuwertenderOrdner=C:\Tmp\CMDHttrack
 DateiMitWebseitordnern=C:\Tmp\WebseitenOrdner.txt
-DateiMitBegriffen=C:\Tmp\Begriffe.xlsx
+DateiMitBegriffen=C:\Tmp\Begriffe.txt
 AuswertungsOrdner=C:\Tmp\Auswertungen
 NullWerteInErgebnisMitaufnehmen=Ja
 InDatenbankSchreiben=Ja
