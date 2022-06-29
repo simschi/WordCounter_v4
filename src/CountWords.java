@@ -2,6 +2,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -69,7 +71,7 @@ public class CountWords {
     private static List<String> getWebsiteFoldersToSearch() throws Exception{
         List<String> websiteFolders = new ArrayList<String>();
         File websiteFoldersFileName = new File(fileWithWebsiteFolders);
-        BufferedReader reader = new BufferedReader(new FileReader(websiteFoldersFileName));
+        BufferedReader reader = new BufferedReader(new FileReader(websiteFoldersFileName, StandardCharsets.UTF_8));
         String websiteFolder;
         while ((websiteFolder = reader.readLine()) != null) {
             websiteFolders.add(websiteFolder);
@@ -85,9 +87,10 @@ public class CountWords {
     private static List<String> getSearchTerms() throws Exception{
         List<String> terms = new ArrayList<String>();
         File termsFileName = new File(fileWithTerms);
-        BufferedReader reader = new BufferedReader(new FileReader(termsFileName));
+        BufferedReader reader = new BufferedReader(new FileReader(termsFileName, StandardCharsets.UTF_8));
         String term;
         while ((term = reader.readLine()) != null) {
+            System.out.println(term);
             terms.add(term);
         }
         reader.close();
