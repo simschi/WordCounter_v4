@@ -4,4 +4,4 @@ DateiMitBegriffen=C:\Tmp\Begriffe.txt
 AuswertungsOrdner=C:\Tmp\Auswertungen
 NullWerteInErgebnisMitaufnehmen=Ja
 InDatenbankSchreiben=Ja
-TrendAnalysisName=Test
+TrendAnalysisName=10WebseitenTest

@@ -213,12 +213,12 @@ public class GUICountWords extends JFrame {
     private void initComponentHTTrackExe(JPanel addToPanel){
         panelHTTrackExe = new JPanel();
         labelHTTrackExe = new JLabel("HTTrack-exe-Datei:", SwingConstants.RIGHT);
-        textFieldHTTrackExe = new JTextField(65);
+        textFieldHTTrackExe = new JTextField(56);
         buttonChooseHTTrackExe = new JButton("Datei selektieren...");
         chooseHTTrackExe = new JFileChooser();
 
         panelHTTrackExe.setLayout(new FlowLayout());
-        labelHTTrackExe.setPreferredSize(new DimensionUIResource(150, 30));
+        labelHTTrackExe.setPreferredSize(new DimensionUIResource(160, 30));
         panelHTTrackExe.add(labelHTTrackExe);
         textFieldHTTrackExe.setEditable(false);
         panelHTTrackExe.add(textFieldHTTrackExe);
@@ -235,13 +235,13 @@ public class GUICountWords extends JFrame {
     private void initComponentChooseWebSiteFile(JPanel addToPanel){
         panelChooseWebsiteFile = new JPanel();
         labelChooseWebsiteFile = new JLabel("Datei mit Webseiten:", SwingConstants.RIGHT);
-        textFieldWebsiteFile = new JTextField(50);
+        textFieldWebsiteFile = new JTextField(40);
         buttonChooseWebsiteFile = new JButton("Datei selektieren...");
         chooseWebsiteFile = new JFileChooser();
         buttonOpenWebsiteFile = new JButton("Datei bearbeiten...");
 
         panelChooseWebsiteFile.setLayout(new FlowLayout());
-        labelChooseWebsiteFile.setPreferredSize(new DimensionUIResource(150, 30));
+        labelChooseWebsiteFile.setPreferredSize(new DimensionUIResource(160, 30));
         panelChooseWebsiteFile.add(labelChooseWebsiteFile);
         textFieldWebsiteFile.setEditable(false);
         panelChooseWebsiteFile.add(textFieldWebsiteFile);
@@ -261,13 +261,13 @@ public class GUICountWords extends JFrame {
     private void initComponentChooseHTTrackOutputFolder(JPanel addToPanel){
         panelHTTrackOutputFolder = new JPanel();
         labelHTTrackOutputFolder = new JLabel("HTTrack Ausgabeordner:", SwingConstants.RIGHT);
-        textFieldHTTrackOutputFolder = new JTextField(65);
+        textFieldHTTrackOutputFolder = new JTextField(56);
         buttonChooseHTTrackOutputFolder = new JButton("Ordner selektieren...");
         chooseHTTrackOutputFolder = new JFileChooser();
         chooseHTTrackOutputFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
         panelHTTrackOutputFolder.setLayout(new FlowLayout());
-        labelHTTrackOutputFolder.setPreferredSize(new DimensionUIResource(150, 30));
+        labelHTTrackOutputFolder.setPreferredSize(new DimensionUIResource(160, 30));
         panelHTTrackOutputFolder.add(labelHTTrackOutputFolder);
         textFieldHTTrackOutputFolder.setEditable(false);
         panelHTTrackOutputFolder.add(textFieldHTTrackOutputFolder);
@@ -337,14 +337,14 @@ public class GUICountWords extends JFrame {
     // --------------------------------------------------
     private void initComponentEvaluationWebsites(JPanel addToPanel){
         panelEvaluationWebsites = new JPanel();
-        labelEvaluationWebsites = new JLabel("Datei m Webseitenordner:", SwingConstants.RIGHT);
-        textFieldEvaluationWebsites = new JTextField(50);
+        labelEvaluationWebsites = new JLabel("Datei mit Webseitenordner:", SwingConstants.RIGHT);
+        textFieldEvaluationWebsites = new JTextField(40);
         buttonEvaluationWebsites = new JButton("Datei selektieren...");
         chooseEvaluationWebsites = new JFileChooser();
         buttonOpenWebsiteFolderFile = new JButton("Datei bearbeiten...");
 
         panelEvaluationWebsites.setLayout(new FlowLayout());
-        labelEvaluationWebsites.setPreferredSize(new DimensionUIResource(150, 30));
+        labelEvaluationWebsites.setPreferredSize(new DimensionUIResource(160, 30));
         panelEvaluationWebsites.add(labelEvaluationWebsites);
         textFieldEvaluationWebsites.setEditable(false);
         panelEvaluationWebsites.add(textFieldEvaluationWebsites);
@@ -364,13 +364,13 @@ public class GUICountWords extends JFrame {
     private void initComponentChooseTermsFile(JPanel addToPanel){
         panelChooseTermsFile = new JPanel();
         labelChooseTermsFile = new JLabel("Datei mit Begriffen:", SwingConstants.RIGHT);
-        textFieldTermsFile = new JTextField(50);
+        textFieldTermsFile = new JTextField(40);
         buttonChooseTermsFile = new JButton("Datei selektieren...");
         chooseTermsFile = new JFileChooser();
         buttonOpenTermsFile = new JButton("Datei bearbeiten...");
 
         panelChooseTermsFile.setLayout(new FlowLayout());
-        labelChooseTermsFile.setPreferredSize(new DimensionUIResource(150, 30));
+        labelChooseTermsFile.setPreferredSize(new DimensionUIResource(160, 30));
         panelChooseTermsFile.add(labelChooseTermsFile);
         textFieldTermsFile.setEditable(false);
         panelChooseTermsFile.add(textFieldTermsFile);
@@ -390,13 +390,13 @@ public class GUICountWords extends JFrame {
     private void initComponentChooseEvaluationOutputFolder(JPanel addToPanel){
         panelEvaluationOutputFolder = new JPanel();
         labelEvaluationOutputFolder = new JLabel("Ausgabeordner:", SwingConstants.RIGHT);
-        textFieldEvaluationOutputFolder = new JTextField(65);
+        textFieldEvaluationOutputFolder = new JTextField(56);
         buttonEvaluationOutputFolder = new JButton("Ordner selektieren...");
         chooseEvaluationOutputFolder = new JFileChooser();
         chooseEvaluationOutputFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
         panelEvaluationOutputFolder.setLayout(new FlowLayout());
-        labelEvaluationOutputFolder.setPreferredSize(new DimensionUIResource(150, 30));
+        labelEvaluationOutputFolder.setPreferredSize(new DimensionUIResource(160, 30));
         panelEvaluationOutputFolder.add(labelEvaluationOutputFolder);
         textFieldEvaluationOutputFolder.setEditable(false);
         panelEvaluationOutputFolder.add(textFieldEvaluationOutputFolder);
