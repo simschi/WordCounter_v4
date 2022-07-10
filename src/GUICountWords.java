@@ -305,7 +305,7 @@ public class GUICountWords extends JFrame {
         panelDownloadWebsitesButtons = new JPanel();
         buttonStartHTTrack = new JButton("Download jetzt starten");
         labelStartDownloadCycleIn = new JLabel("Download alle: ");
-        spinnerDownloadInDays = new JSpinner(new SpinnerNumberModel(0, 0, 31, 1));
+        spinnerDownloadInDays = new JSpinner(new SpinnerNumberModel(1, 1, 31, 1));
         labelDownloadDays = new JLabel("Tage");
         spinnerDownloadInHours = new JSpinner(new SpinnerNumberModel(0, 0, 99, 1));
         labelDownloadHours = new JLabel("Stunden");
@@ -432,7 +432,7 @@ public class GUICountWords extends JFrame {
         panelEvaluationButtons = new JPanel();
         buttonStartEvaluation = new JButton("Auswertung jetzt starten");
         labelStartEvaluationCycleIn = new JLabel("Auswertung alle: ");
-        spinnerEvaluateInDays = new JSpinner(new SpinnerNumberModel(0, 0, 31, 1));
+        spinnerEvaluateInDays = new JSpinner(new SpinnerNumberModel(1, 1, 31, 1));
         labelEvaluationDays = new JLabel("Tage");
         spinnerEvaluateInHours = new JSpinner(new SpinnerNumberModel(0, 0, 99, 1));
         labelEvaluationHours = new JLabel("Stunden");
