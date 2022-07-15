@@ -1,7 +1,6 @@
-a
-b
-c
-aa
-ab
-ac
 Sonderlösungen
+Batterie
+battery
+device
+electric
+elektrisch
