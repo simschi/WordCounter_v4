@@ -1,33 +1,21 @@
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import org.apache.commons.io.FileUtils;
+
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.sql.*;
 import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
-import javax.swing.JTabbedPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.SpinnerDateModel;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingConstants;
+import javax.swing.*;
 import javax.swing.JSpinner.DateEditor;
 import javax.swing.border.TitledBorder;
 import javax.swing.plaf.DimensionUIResource;
@@ -45,8 +33,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.awt.FlowLayout;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class GUICountWords extends JFrame {
     // --------------------------------------------------
@@ -66,6 +55,7 @@ public class GUICountWords extends JFrame {
     private JPanel panelHTTrackOutputFolder;
     private JPanel panelHTTrackOptions;
     private JPanel panelDownloadWebsitesButtons;
+    private JPanel panelDownloadProgressBar;
     private JPanel panelEvaluationWebsites;
     private JPanel panelChooseTermsFile;
     private JPanel panelEvaluationOutputFolder;
@@ -83,13 +73,13 @@ public class GUICountWords extends JFrame {
     private JLabel labelHTTrackExe;
     private JLabel labelHTTrackOutputFolder;
     private JLabel labelStartDownloadCycleIn;
-    private JLabel labelDownloadDays; 
+    private JLabel labelDownloadDays;
     private JLabel labelDownloadHours;
     private JLabel labelNextDownloadAt;
-    private JLabel labelEvaluationWebsites; 
+    private JLabel labelEvaluationWebsites;
     private JLabel labelChooseTermsFile;
     private JLabel labelEvaluationOutputFolder;
-    private JLabel labelEvaluationDays; 
+    private JLabel labelEvaluationDays;
     private JLabel labelEvaluationHours;
     private JLabel labelStartEvaluationCycleIn;
     private JLabel labelNextEvaluationAt;
@@ -124,6 +114,8 @@ public class GUICountWords extends JFrame {
     private JButton buttonOpenTermsFile;
     private JButton buttonSearch;
     private JRadioButton radioButtonOnlyHTMLFiles;
+    private JRadioButton radioButtonIncludeImages;
+    private JRadioButton radioButtonIncludeImagesAndVideos;
     private JRadioButton radioButtonAllFiles;
     private ButtonGroup buttonGroupTypeOfFiles;
     private JCheckBox checkBoxZeroValuesInExcel;
@@ -135,23 +127,25 @@ public class GUICountWords extends JFrame {
     private JSpinner spinnerFilterDateFrom;
     private JSpinner spinnerFilterDateTo;
     private DefaultTableModel modelSearchResults;
-    private JTable tableSearchResults; 
-    private JFileChooser chooseHTTrackExe; 
+    private JTable tableSearchResults;
+    private JFileChooser chooseHTTrackExe;
     private JFileChooser chooseWebsiteFile;
     private JFileChooser chooseHTTrackOutputFolder;
-    private JFileChooser chooseEvaluationWebsites; 
+    private JFileChooser chooseEvaluationWebsites;
     private JFileChooser chooseTermsFile;
     private JFileChooser chooseEvaluationOutputFolder;
-    
+
+    private JProgressBar downloadProgressBar;
+
     public static void main(String[] args) throws Exception {
         new GUICountWords();
     }
 
-    public GUICountWords(){
+    public GUICountWords() {
         setTitle("Word Counter");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1024,576);
-        
+        setSize(1024, 576);
+
         initComponentMainPanelAndOthers();
         addWindowEvents();
 
@@ -160,7 +154,8 @@ public class GUICountWords extends JFrame {
         setVisible(true);
     }
 
-    private void initComponentMainPanelAndOthers(){
+    private void initComponentMainPanelAndOthers() {
+        downloadProgressBar = new JProgressBar();
         countWordsRegisters = new JTabbedPane();
         mainPanel = new JPanel();
         searchPanel = new JPanel();
@@ -172,7 +167,7 @@ public class GUICountWords extends JFrame {
         titledBorderEval = new TitledBorder("Auswertungen");
         titledBorderFilterCriteria = new TitledBorder("Filterkriterien");
         titledBorderSearchResult = new TitledBorder("Suchergebnis");
-        
+
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         searchPanel.setLayout(new BoxLayout(searchPanel, BoxLayout.Y_AXIS));
         panelDownloadWebsites.setBorder(titledBorderDW);
@@ -185,6 +180,7 @@ public class GUICountWords extends JFrame {
         initComponentChooseHTTrackOutputFolder(panelDownloadWebsites);
         initComponentHTTrackOptions(panelDownloadWebsites);
         initComponentStartWebsiteDownload(panelDownloadWebsites);
+        initComponentDownloadProgressBar(panelDownloadWebsites);
 
         initComponentEvaluationWebsites(panelEvaluation);
         initComponentChooseTermsFile(panelEvaluation);
@@ -202,15 +198,15 @@ public class GUICountWords extends JFrame {
         panelSearchResults.setPreferredSize(new DimensionUIResource(panelSearchResults.getWidth(), 450));
         searchPanel.add(panelSearchResults);
 
-        countWordsRegisters.addTab("Programmsteuerung",mainPanel);
-        countWordsRegisters.addTab("Suche",searchPanel);
+        countWordsRegisters.addTab("Programmsteuerung", mainPanel);
+        countWordsRegisters.addTab("Suche", searchPanel);
         add(countWordsRegisters);
     }
-    
+
     // --------------------------------------------------
     // Pfad zur HTTrack-Exe festlegen
     // --------------------------------------------------
-    private void initComponentHTTrackExe(JPanel addToPanel){
+    private void initComponentHTTrackExe(JPanel addToPanel) {
         panelHTTrackExe = new JPanel();
         labelHTTrackExe = new JLabel("HTTrack-exe-Datei:", SwingConstants.RIGHT);
         textFieldHTTrackExe = new JTextField(56);
@@ -232,7 +228,7 @@ public class GUICountWords extends JFrame {
     // --------------------------------------------------
     // Komponente Webseiten-Datei auswählen
     // --------------------------------------------------
-    private void initComponentChooseWebSiteFile(JPanel addToPanel){
+    private void initComponentChooseWebSiteFile(JPanel addToPanel) {
         panelChooseWebsiteFile = new JPanel();
         labelChooseWebsiteFile = new JLabel("Datei mit Webseiten:", SwingConstants.RIGHT);
         textFieldWebsiteFile = new JTextField(40);
@@ -258,7 +254,7 @@ public class GUICountWords extends JFrame {
     // --------------------------------------------------
     // HTTrack Output Folder festlegen
     // --------------------------------------------------
-    private void initComponentChooseHTTrackOutputFolder(JPanel addToPanel){
+    private void initComponentChooseHTTrackOutputFolder(JPanel addToPanel) {
         panelHTTrackOutputFolder = new JPanel();
         labelHTTrackOutputFolder = new JLabel("HTTrack Ausgabeordner:", SwingConstants.RIGHT);
         textFieldHTTrackOutputFolder = new JTextField(56);
@@ -281,18 +277,24 @@ public class GUICountWords extends JFrame {
     // --------------------------------------------------
     // HTTrack Optionen
     // --------------------------------------------------
-    private void initComponentHTTrackOptions(JPanel addToPanel){
-        panelHTTrackOptions = new JPanel(); 
+    private void initComponentHTTrackOptions(JPanel addToPanel) {
+        panelHTTrackOptions = new JPanel();
         radioButtonOnlyHTMLFiles = new JRadioButton("Nur HTML-Dateien");
         radioButtonOnlyHTMLFiles.setSelected(true);
-        radioButtonAllFiles = new JRadioButton("HTML-Dateien mit Bildern");
+        radioButtonIncludeImages = new JRadioButton("HTML-Dateien mit Bildern");
+        radioButtonIncludeImagesAndVideos = new JRadioButton("HTML-Dateien mit Bildern und Videos");
+        radioButtonAllFiles = new JRadioButton("Alle Dateien");
         buttonGroupTypeOfFiles = new ButtonGroup();
         buttonGroupTypeOfFiles.add(radioButtonOnlyHTMLFiles);
+        buttonGroupTypeOfFiles.add(radioButtonIncludeImages);
+        buttonGroupTypeOfFiles.add(radioButtonIncludeImagesAndVideos);
         buttonGroupTypeOfFiles.add(radioButtonAllFiles);
 
         panelHTTrackOptions.setLayout(new FlowLayout());
         panelHTTrackOptions.setPreferredSize(new DimensionUIResource(800, 30));
         panelHTTrackOptions.add(radioButtonOnlyHTMLFiles);
+        panelHTTrackOptions.add(radioButtonIncludeImages);
+        panelHTTrackOptions.add(radioButtonIncludeImagesAndVideos);
         panelHTTrackOptions.add(radioButtonAllFiles);
 
         addToPanel.add(panelHTTrackOptions);
@@ -301,7 +303,7 @@ public class GUICountWords extends JFrame {
     // --------------------------------------------------
     // Buttons für den WebsiteDownload initialisieren
     // --------------------------------------------------
-    private void initComponentStartWebsiteDownload(JPanel addToPanel){
+    private void initComponentStartWebsiteDownload(JPanel addToPanel) {
         panelDownloadWebsitesButtons = new JPanel();
         buttonStartHTTrack = new JButton("Download jetzt starten");
         labelStartDownloadCycleIn = new JLabel("Download alle: ");
@@ -312,7 +314,7 @@ public class GUICountWords extends JFrame {
         buttonStartDownloadCycle = new JButton("Zyklus starten");
         buttonStopDownloadCycle = new JButton("Zyklus stoppen");
         labelNextDownloadAt = new JLabel();
-        
+
         panelDownloadWebsitesButtons.setLayout(new FlowLayout());
 
         buttonStartHTTrack.addActionListener(new MyActionListener());
@@ -328,14 +330,28 @@ public class GUICountWords extends JFrame {
         buttonStopDownloadCycle.setEnabled(false);
         panelDownloadWebsitesButtons.add(buttonStopDownloadCycle);
         panelDownloadWebsitesButtons.add(labelNextDownloadAt);
-        
+
         addToPanel.add(panelDownloadWebsitesButtons);
+    }
+
+    // ------------------------------------------------------
+    // Fortschrittsbalken für  WebsiteDownload initialisieren
+    // ------------------------------------------------------
+    private void initComponentDownloadProgressBar(JPanel addToPanel) {
+        panelDownloadProgressBar = new JPanel();
+
+        downloadProgressBar.setVisible(false);
+        downloadProgressBar.setValue(0);
+        downloadProgressBar.setStringPainted(true);
+        panelDownloadProgressBar.add(downloadProgressBar);
+
+        addToPanel.add(panelDownloadProgressBar);
     }
 
     // --------------------------------------------------
     // Auszuwertende Webseiten(-Ordner) festlegen
     // --------------------------------------------------
-    private void initComponentEvaluationWebsites(JPanel addToPanel){
+    private void initComponentEvaluationWebsites(JPanel addToPanel) {
         panelEvaluationWebsites = new JPanel();
         labelEvaluationWebsites = new JLabel("Datei mit Webseitenordner:", SwingConstants.RIGHT);
         textFieldEvaluationWebsites = new JTextField(40);
@@ -361,7 +377,7 @@ public class GUICountWords extends JFrame {
     // --------------------------------------------------
     // Datei mit auszuwertenden Begriffen auswählen
     // --------------------------------------------------
-    private void initComponentChooseTermsFile(JPanel addToPanel){
+    private void initComponentChooseTermsFile(JPanel addToPanel) {
         panelChooseTermsFile = new JPanel();
         labelChooseTermsFile = new JLabel("Datei mit Begriffen:", SwingConstants.RIGHT);
         textFieldTermsFile = new JTextField(40);
@@ -387,7 +403,7 @@ public class GUICountWords extends JFrame {
     // --------------------------------------------------
     // Auswertungs Output Folder festlegen
     // --------------------------------------------------
-    private void initComponentChooseEvaluationOutputFolder(JPanel addToPanel){
+    private void initComponentChooseEvaluationOutputFolder(JPanel addToPanel) {
         panelEvaluationOutputFolder = new JPanel();
         labelEvaluationOutputFolder = new JLabel("Ausgabeordner:", SwingConstants.RIGHT);
         textFieldEvaluationOutputFolder = new JTextField(56);
@@ -406,11 +422,11 @@ public class GUICountWords extends JFrame {
 
         addToPanel.add(panelEvaluationOutputFolder);
     }
-    
+
     // --------------------------------------------------
     // Komponente für Auswertungsoptionen 
     // --------------------------------------------------
-    private void initComponentEvaluationOptions(JPanel addToPanel){
+    private void initComponentEvaluationOptions(JPanel addToPanel) {
         panelEvaluationOptions = new JPanel();
         checkBoxZeroValuesInExcel = new JCheckBox("Nullwerte in Exceldatei ausgeben?");
         checkBoxTrendAnalysis = new JCheckBox("Daten in Trendanalyse importieren?");
@@ -428,7 +444,7 @@ public class GUICountWords extends JFrame {
     // --------------------------------------------------
     // Buttons für die Auswertung initialisieren
     // --------------------------------------------------
-    private void initComponentStartEvaluation(JPanel addToPanel){
+    private void initComponentStartEvaluation(JPanel addToPanel) {
         panelEvaluationButtons = new JPanel();
         buttonStartEvaluation = new JButton("Auswertung jetzt starten");
         labelStartEvaluationCycleIn = new JLabel("Auswertung alle: ");
@@ -439,7 +455,7 @@ public class GUICountWords extends JFrame {
         buttonStartEvaluationCycle = new JButton("Zyklus starten");
         buttonStopEvaluationCycle = new JButton("Zyklus stoppen");
         labelNextEvaluationAt = new JLabel();
-        
+
         panelEvaluationButtons.setLayout(new FlowLayout());
 
         buttonStartEvaluation.addActionListener(new MyActionListener());
@@ -455,14 +471,14 @@ public class GUICountWords extends JFrame {
         buttonStopEvaluationCycle.setEnabled(false);
         panelEvaluationButtons.add(buttonStopEvaluationCycle);
         panelEvaluationButtons.add(labelNextEvaluationAt);
-        
+
         addToPanel.add(panelEvaluationButtons);
     }
 
     // --------------------------------------------------
     // Komponente für Filterkriterien über Suche
     // --------------------------------------------------
-    private void initComponentFilterCriteria(JPanel addToPanel){
+    private void initComponentFilterCriteria(JPanel addToPanel) {
         panelFilterSearchTerms = new JPanel();
         labelFilterWebsites = new JLabel("Webseite: ");
         labelFilterSearchTerm = new JLabel("Wort: ");
@@ -496,17 +512,17 @@ public class GUICountWords extends JFrame {
     // --------------------------------------------------
     // Komponente für Suchergebnisse
     // --------------------------------------------------
-    private void initComponentSearchResults(JPanel addToPanel){
+    private void initComponentSearchResults(JPanel addToPanel) {
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         panelSearchResultsTable = new JPanel();
-        String columnNames[]={"Wort","Anzahl","Webseite", "Datum"}; 
-        modelSearchResults = new DefaultTableModel(columnNames, 0){
+        String columnNames[] = {"Wort", "Anzahl", "Webseite", "Datum"};
+        modelSearchResults = new DefaultTableModel(columnNames, 0) {
             public boolean isCellEditable(int rowIndex, int columnIndex) {
                 return false;
             }
         };
         tableSearchResults = new JTable(modelSearchResults);
-        scrollPaneTableResults=new JScrollPane(tableSearchResults);    
+        scrollPaneTableResults = new JScrollPane(tableSearchResults);
 
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
         tableSearchResults.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
@@ -515,7 +531,7 @@ public class GUICountWords extends JFrame {
         tableSearchResults.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
 
         scrollPaneTableResults.setPreferredSize(new DimensionUIResource(950, 400));
-        panelSearchResultsTable.add(scrollPaneTableResults);     
+        panelSearchResultsTable.add(scrollPaneTableResults);
 
         addToPanel.add(panelSearchResultsTable);
     }
@@ -530,13 +546,14 @@ public class GUICountWords extends JFrame {
     // --------------------------------------------------
     // Was soll passieren wenn sich das Fenster schließt
     // --------------------------------------------------
-    private void addWindowEvents(){
+    private void addWindowEvents() {
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowOpened(WindowEvent e) {
                 connectToDB();
                 LoadAllSettings();
             }
+
             @Override
             public void windowClosing(WindowEvent e) {
                 SaveAllSettings();
@@ -550,125 +567,130 @@ public class GUICountWords extends JFrame {
     // Innere Klasse um auf Benutzeraktionen zu reagieren
     // --------------------------------------------------
     class MyActionListener implements ActionListener {
-        private boolean checkIfDownloadIsPossible(){
-            if(textFieldHTTrackExe.getText().isEmpty()){
+        private boolean checkIfDownloadIsPossible() {
+            if (textFieldHTTrackExe.getText().isEmpty()) {
                 JOptionPane.showMessageDialog(GUICountWords.this, "Keine HTTrack-Exe selektiert", "Fehler", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
-            if(textFieldWebsiteFile.getText().isEmpty()){
+            if (textFieldWebsiteFile.getText().isEmpty()) {
                 JOptionPane.showMessageDialog(GUICountWords.this, "Keine Webseiten-Datei selektiert", "Fehler", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
-            if(textFieldHTTrackOutputFolder.getText().isEmpty()){
+            if (textFieldHTTrackOutputFolder.getText().isEmpty()) {
                 JOptionPane.showMessageDialog(GUICountWords.this, "Kein HTTrack Ausgabeordner angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
-            return true; 
+            return true;
         }
-        private boolean checkIfDownloadCycleIsPossible(){
-            if(((int)spinnerDownloadInDays.getValue() < 1) && ((int)spinnerDownloadInHours.getValue() < 1)){
+
+        private boolean checkIfDownloadCycleIsPossible() {
+            if (((int) spinnerDownloadInDays.getValue() < 1) && ((int) spinnerDownloadInHours.getValue() < 1)) {
                 JOptionPane.showMessageDialog(GUICountWords.this, "Zykluswert muss größer 0 sein", "Fehler", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
-            return true; 
+            return true;
         }
-        private boolean checkIfEvaluationIsPossible(){
-            if(textFieldHTTrackOutputFolder.getText().isEmpty()){
+
+        private boolean checkIfEvaluationIsPossible() {
+            if (textFieldHTTrackOutputFolder.getText().isEmpty()) {
                 JOptionPane.showMessageDialog(GUICountWords.this, "Kein HTTrack Ausgabeordner angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
-            if(textFieldEvaluationWebsites.getText().isEmpty()){
+            if (textFieldEvaluationWebsites.getText().isEmpty()) {
                 JOptionPane.showMessageDialog(GUICountWords.this, "Kein Webseiten-Ordner-Datei angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
-            if(textFieldTermsFile.getText().isEmpty()){
+            if (textFieldTermsFile.getText().isEmpty()) {
                 JOptionPane.showMessageDialog(GUICountWords.this, "Kein Suchbegriff-Datei angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
-            if(textFieldEvaluationOutputFolder.getText().isEmpty()){
+            if (textFieldEvaluationOutputFolder.getText().isEmpty()) {
                 JOptionPane.showMessageDialog(GUICountWords.this, "Kein Auswertungs-Ausgabeordner angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
             return true;
         }
-        private boolean checkIfEvaluationCycleIsPossible(){
-            if(((int)spinnerEvaluateInDays.getValue() < 1) && ((int)spinnerEvaluateInHours.getValue() < 1)){
+
+        private boolean checkIfEvaluationCycleIsPossible() {
+            if (((int) spinnerEvaluateInDays.getValue() < 1) && ((int) spinnerEvaluateInHours.getValue() < 1)) {
                 JOptionPane.showMessageDialog(GUICountWords.this, "Zykluswert muss größer 0 sein", "Fehler", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
-            return true; 
+            return true;
         }
+
         private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
         private Runnable runnableDownloadCycle = new Runnable() {
             public void run() {
-                File tempFileDownloadRunning = new File(".\\DownloadIsRunning"); 
-                File tempFileEvaluationRunning = new File(".\\EvaluationIsRunning"); 
-                if(tempFileDownloadRunning.exists()){
+                File tempFileDownloadRunning = new File(".\\DownloadIsRunning");
+                File tempFileEvaluationRunning = new File(".\\EvaluationIsRunning");
+                if (tempFileDownloadRunning.exists()) {
                     System.out.println("Download läuft bereits, warten auf den nächsten Zyklus");
                 }
-                if(tempFileEvaluationRunning.exists()){
+                if (tempFileEvaluationRunning.exists()) {
                     System.out.println("Es läuft gerade eine Auswertung, warten auf den nächsten Zyklus");
                 }
-                if((!tempFileDownloadRunning.exists()) && (!tempFileEvaluationRunning.exists())){
+                if ((!tempFileDownloadRunning.exists()) && (!tempFileEvaluationRunning.exists())) {
                     startHTTrackDownload();
                 }
                 String nextCycleDateTime = getNextCycleDateTime(
-                    (int)spinnerDownloadInDays.getValue(),
-                    (int)spinnerDownloadInHours.getValue()
+                        (int) spinnerDownloadInDays.getValue(),
+                        (int) spinnerDownloadInHours.getValue()
                 );
                 labelNextDownloadAt.setText("Download startet um: " + nextCycleDateTime);
             }
         };
         private Runnable runnableEvaluationCycle = new Runnable() {
             public void run() {
-                File tempFileDownloadRunning = new File(".\\DownloadIsRunning"); 
-                File tempFileEvaluationRunning = new File(".\\EvaluationIsRunning"); 
-                if(tempFileDownloadRunning.exists()){
+                File tempFileDownloadRunning = new File(".\\DownloadIsRunning");
+                File tempFileEvaluationRunning = new File(".\\EvaluationIsRunning");
+                if (tempFileDownloadRunning.exists()) {
                     System.out.println("Es läuft gerade ein Download, warten auf den nächsten Zyklus");
                 }
-                if(tempFileEvaluationRunning.exists()){
+                if (tempFileEvaluationRunning.exists()) {
                     System.out.println("Auswertung läuft bereits, warten auf den nächsten Zyklus");
                 }
-                if((!tempFileDownloadRunning.exists()) && (!tempFileEvaluationRunning.exists())){
+                if ((!tempFileDownloadRunning.exists()) && (!tempFileEvaluationRunning.exists())) {
                     startEvaluation();
                 }
                 String nextEvaluationDateTime = getNextCycleDateTime(
-                    (int)spinnerEvaluateInDays.getValue(),    
-                    (int)spinnerEvaluateInHours.getValue() 
+                        (int) spinnerEvaluateInDays.getValue(),
+                        (int) spinnerEvaluateInHours.getValue()
                 );
                 labelNextEvaluationAt.setText("Auswertung startet um: " + nextEvaluationDateTime);
             }
         };
         private ScheduledFuture<?> threadDownloadCycle;
         private ScheduledFuture<?> threadEvaluationCycle;
+
         public void actionPerformed(ActionEvent e) {
-            if(e.getSource() == buttonChooseHTTrackExe){
+            if (e.getSource() == buttonChooseHTTrackExe) {
                 int result = chooseHTTrackExe.showOpenDialog(GUICountWords.this);
-                if(result == JFileChooser.APPROVE_OPTION){
+                if (result == JFileChooser.APPROVE_OPTION) {
                     textFieldHTTrackExe.setText(chooseHTTrackExe.getSelectedFile().toString());
                 }
             }
-            if(e.getSource() == buttonChooseWebsiteFile){
+            if (e.getSource() == buttonChooseWebsiteFile) {
                 int result = chooseWebsiteFile.showOpenDialog(GUICountWords.this);
-                if(result == JFileChooser.APPROVE_OPTION){
+                if (result == JFileChooser.APPROVE_OPTION) {
                     textFieldWebsiteFile.setText(chooseWebsiteFile.getSelectedFile().toString());
                 }
             }
-            if(e.getSource() == buttonChooseHTTrackOutputFolder){
+            if (e.getSource() == buttonChooseHTTrackOutputFolder) {
                 int result = chooseHTTrackOutputFolder.showOpenDialog(GUICountWords.this);
-                if(result == JFileChooser.APPROVE_OPTION){
+                if (result == JFileChooser.APPROVE_OPTION) {
                     textFieldHTTrackOutputFolder.setText(chooseHTTrackOutputFolder.getSelectedFile().toString());
                 }
             }
-            if(e.getSource() == buttonStartHTTrack){
-                if(!checkIfDownloadIsPossible()) return;
+            if (e.getSource() == buttonStartHTTrack) {
+                if (!checkIfDownloadIsPossible()) return;
                 startHTTrackDownload();
             }
-            if(e.getSource() == buttonStartDownloadCycle){
-                if(!checkIfDownloadIsPossible()) return;
-                if(!checkIfDownloadCycleIsPossible()) return;
-                int nextCycleInDays = (int)spinnerDownloadInDays.getValue();
-                int nextCycleInHours = (int)spinnerDownloadInHours.getValue();
+            if (e.getSource() == buttonStartDownloadCycle) {
+                if (!checkIfDownloadIsPossible()) return;
+                if (!checkIfDownloadCycleIsPossible()) return;
+                int nextCycleInDays = (int) spinnerDownloadInDays.getValue();
+                int nextCycleInHours = (int) spinnerDownloadInHours.getValue();
                 int nextCycleCombinedInHours = (nextCycleInDays * 24) + nextCycleInHours;
                 threadDownloadCycle = executorService.scheduleAtFixedRate(runnableDownloadCycle, 0, nextCycleCombinedInHours, TimeUnit.HOURS);
                 spinnerDownloadInDays.setEnabled(false);
@@ -676,41 +698,41 @@ public class GUICountWords extends JFrame {
                 buttonStartDownloadCycle.setEnabled(false);
                 buttonStopDownloadCycle.setEnabled(true);
             }
-            if(e.getSource() == buttonStopDownloadCycle){
-                if(threadDownloadCycle != null) threadDownloadCycle.cancel(false);
+            if (e.getSource() == buttonStopDownloadCycle) {
+                if (threadDownloadCycle != null) threadDownloadCycle.cancel(false);
                 labelNextDownloadAt.setText("");
                 spinnerDownloadInDays.setEnabled(true);
                 spinnerDownloadInHours.setEnabled(true);
                 buttonStartDownloadCycle.setEnabled(true);
                 buttonStopDownloadCycle.setEnabled(false);
             }
-            if(e.getSource() == buttonEvaluationWebsites){
+            if (e.getSource() == buttonEvaluationWebsites) {
                 int result = chooseEvaluationWebsites.showOpenDialog(GUICountWords.this);
-                if(result == JFileChooser.APPROVE_OPTION){
+                if (result == JFileChooser.APPROVE_OPTION) {
                     textFieldEvaluationWebsites.setText(chooseEvaluationWebsites.getSelectedFile().toString());
                 }
             }
-            if(e.getSource() == buttonChooseTermsFile){
+            if (e.getSource() == buttonChooseTermsFile) {
                 int result = chooseTermsFile.showOpenDialog(GUICountWords.this);
-                if(result == JFileChooser.APPROVE_OPTION){
+                if (result == JFileChooser.APPROVE_OPTION) {
                     textFieldTermsFile.setText(chooseTermsFile.getSelectedFile().toString());
                 }
             }
-            if(e.getSource() == buttonEvaluationOutputFolder){
+            if (e.getSource() == buttonEvaluationOutputFolder) {
                 int result = chooseEvaluationOutputFolder.showOpenDialog(GUICountWords.this);
-                if(result == JFileChooser.APPROVE_OPTION){
+                if (result == JFileChooser.APPROVE_OPTION) {
                     textFieldEvaluationOutputFolder.setText(chooseEvaluationOutputFolder.getSelectedFile().toString());
                 }
             }
-            if(e.getSource() == buttonStartEvaluation){
-                if(!checkIfEvaluationIsPossible()) return;
+            if (e.getSource() == buttonStartEvaluation) {
+                if (!checkIfEvaluationIsPossible()) return;
                 startEvaluation();
             }
-            if(e.getSource() == buttonStartEvaluationCycle){
-                if(!checkIfEvaluationIsPossible()) return;
-                if(!checkIfEvaluationCycleIsPossible()) return;
-                int nextEvaluationInDays = (int)spinnerEvaluateInDays.getValue();
-                int nextEvaluationInHours = (int)spinnerEvaluateInHours.getValue();
+            if (e.getSource() == buttonStartEvaluationCycle) {
+                if (!checkIfEvaluationIsPossible()) return;
+                if (!checkIfEvaluationCycleIsPossible()) return;
+                int nextEvaluationInDays = (int) spinnerEvaluateInDays.getValue();
+                int nextEvaluationInHours = (int) spinnerEvaluateInHours.getValue();
                 int nextEvaluationCombinedInHours = (nextEvaluationInDays * 24) + nextEvaluationInHours;
                 threadEvaluationCycle = executorService.scheduleAtFixedRate(runnableEvaluationCycle, 0, nextEvaluationCombinedInHours, TimeUnit.HOURS);
                 spinnerEvaluateInDays.setEnabled(false);
@@ -718,72 +740,79 @@ public class GUICountWords extends JFrame {
                 buttonStartEvaluationCycle.setEnabled(false);
                 buttonStopEvaluationCycle.setEnabled(true);
             }
-            if(e.getSource() == buttonStopEvaluationCycle){
-                if(threadEvaluationCycle != null) threadEvaluationCycle.cancel(false);
+            if (e.getSource() == buttonStopEvaluationCycle) {
+                if (threadEvaluationCycle != null) threadEvaluationCycle.cancel(false);
                 labelNextEvaluationAt.setText("");
                 spinnerEvaluateInDays.setEnabled(true);
                 spinnerEvaluateInHours.setEnabled(true);
                 buttonStartEvaluationCycle.setEnabled(true);
                 buttonStopEvaluationCycle.setEnabled(false);
             }
-            if(e.getSource() == buttonOpenWebsiteFile){
+            if (e.getSource() == buttonOpenWebsiteFile) {
                 try {
                     File websiteFile = new File(textFieldWebsiteFile.getText());
-                    if(textFieldWebsiteFile.getText().isEmpty()) {
+                    if (textFieldWebsiteFile.getText().isEmpty()) {
                         JOptionPane.showMessageDialog(GUICountWords.this, "Kein Webseitendatei angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    if(!websiteFile.exists()) {
+                    if (!websiteFile.exists()) {
                         JOptionPane.showMessageDialog(GUICountWords.this, "Die Webseitendatei existiert nicht", "Fehler", JOptionPane.ERROR_MESSAGE);
                         return;
-                    } 
+                    }
                     Desktop.getDesktop().edit(websiteFile);
-                } catch (Exception ex) { System.out.println(ex.getMessage()); }
+                } catch (Exception ex) {
+                    System.out.println(ex.getMessage());
+                }
             }
-            if(e.getSource() == buttonOpenWebsiteFolderFile){
+            if (e.getSource() == buttonOpenWebsiteFolderFile) {
                 try {
                     File websiteFolderFile = new File(textFieldEvaluationWebsites.getText());
-                    if(textFieldEvaluationWebsites.getText().isEmpty()) {
+                    if (textFieldEvaluationWebsites.getText().isEmpty()) {
                         JOptionPane.showMessageDialog(GUICountWords.this, "Kein Webseitenordnerdatei angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    if(!websiteFolderFile.exists()) {
+                    if (!websiteFolderFile.exists()) {
                         JOptionPane.showMessageDialog(GUICountWords.this, "Die Webseitenordnerdatei existiert nicht", "Fehler", JOptionPane.ERROR_MESSAGE);
                         return;
-                    } 
+                    }
                     Desktop.getDesktop().edit(websiteFolderFile);
-                } catch (Exception ex) { System.out.println(ex.getMessage()); }
+                } catch (Exception ex) {
+                    System.out.println(ex.getMessage());
+                }
             }
-            if(e.getSource() == buttonOpenTermsFile){
+            if (e.getSource() == buttonOpenTermsFile) {
                 try {
                     File termsFile = new File(textFieldTermsFile.getText());
-                    if(textFieldTermsFile.getText().isEmpty()) {
+                    if (textFieldTermsFile.getText().isEmpty()) {
                         JOptionPane.showMessageDialog(GUICountWords.this, "Kein Begriffe-Datei angegeben", "Fehler", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    if(!termsFile.exists()) {
+                    if (!termsFile.exists()) {
                         JOptionPane.showMessageDialog(GUICountWords.this, "Die Begriffe-Datei existiert nicht", "Fehler", JOptionPane.ERROR_MESSAGE);
                         return;
-                    } 
+                    }
                     Desktop.getDesktop().edit(termsFile);
-                } catch (Exception ex) { System.out.println(ex.getMessage()); }
+                } catch (Exception ex) {
+                    System.out.println(ex.getMessage());
+                }
             }
-            if(e.getSource() == buttonSearch){
-                File tempFileEvaluationRunning = new File(".\\EvaluationIsRunning"); 
-                if(tempFileEvaluationRunning.exists()){
+            if (e.getSource() == buttonSearch) {
+                File tempFileEvaluationRunning = new File(".\\EvaluationIsRunning");
+                if (tempFileEvaluationRunning.exists()) {
                     System.out.println("Es wird gerade eine Auswertung gemacht");
-                    return; 
+                    return;
                 }
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
                 modelSearchResults.setRowCount(0);
                 searchThroughWordTable(
-                    textFieldFilterSearchTerm.getText(),
-                    textFieldFilterWebsites.getText(),
-                    dateFormat.format((Date)spinnerFilterDateFrom.getValue()),
-                    dateFormat.format((Date)spinnerFilterDateTo.getValue())
+                        textFieldFilterSearchTerm.getText(),
+                        textFieldFilterWebsites.getText(),
+                        dateFormat.format((Date) spinnerFilterDateFrom.getValue()),
+                        dateFormat.format((Date) spinnerFilterDateTo.getValue())
                 );
             }
         }
+
         private void Show_Output(Process process) throws IOException {
             BufferedReader output_reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String output = "";
@@ -791,62 +820,285 @@ public class GUICountWords extends JFrame {
                 System.out.println(output);
             }
         }
-        private String getNextCycleDateTime(int inDays, int inHours){
+
+        private String getNextCycleDateTime(int inDays, int inHours) {
             SimpleDateFormat dateTimeFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-            Calendar cal = Calendar.getInstance(); 
+            Calendar cal = Calendar.getInstance();
             cal.setTime(new Date());
             cal.add(Calendar.DATE, inDays);
-            cal.add(Calendar.HOUR_OF_DAY, inHours);    
+            cal.add(Calendar.HOUR_OF_DAY, inHours);
             return dateTimeFormat.format(cal.getTime());
         }
-        private void startHTTrackDownload(){
-            File tempFileDownloadRunning = new File(".\\DownloadIsRunning"); 
-            try{
-                String fileTypes = (radioButtonOnlyHTMLFiles.isSelected() ? "-p1" : "-p3");
-                String command = "\"" + textFieldHTTrackExe.getText() + "\" -%L " +
-                    "\"" + textFieldWebsiteFile.getText() + "\" -O " + 
-                    "\"" + textFieldHTTrackOutputFolder.getText() + "\" " + 
-                    "-w -c8 -f0 -s0 " + fileTypes + " -A100000000 -q -%v";
-                tempFileDownloadRunning.createNewFile();
-                Process runtime = Runtime.getRuntime().exec(command);
-                Show_Output(runtime);
-            } catch (Exception ex) { 
-                System.out.println(ex.getMessage()); 
-            } finally { 
-                if(tempFileDownloadRunning.exists()) tempFileDownloadRunning.delete();
-            } 
+
+        private void  setGUIInputEnabled(boolean enabled){
+
+            /*Website Download */
+            buttonChooseHTTrackExe.setEnabled(enabled);
+            buttonChooseWebsiteFile.setEnabled(enabled);
+            buttonOpenWebsiteFile.setEnabled(enabled);
+            buttonChooseHTTrackOutputFolder.setEnabled(enabled);
+            radioButtonOnlyHTMLFiles.setEnabled(enabled);
+            radioButtonIncludeImages.setEnabled(enabled);
+            radioButtonIncludeImagesAndVideos.setEnabled(enabled);
+            radioButtonAllFiles.setEnabled(enabled);
+            buttonStartHTTrack.setEnabled(enabled);
+            buttonStartDownloadCycle.setEnabled(enabled);
+            spinnerDownloadInDays.setEnabled(enabled);
+            spinnerDownloadInHours.setEnabled(enabled);
+
+            /*Auswertung*/
+            buttonEvaluationWebsites.setEnabled(enabled);
+            buttonOpenWebsiteFolderFile.setEnabled(enabled);
+            buttonChooseTermsFile.setEnabled(enabled);
+            buttonOpenTermsFile.setEnabled(enabled);
+            buttonEvaluationOutputFolder.setEnabled(enabled);
+            buttonStartEvaluation.setEnabled(enabled);
+            buttonStartEvaluationCycle.setEnabled(enabled);
+            spinnerEvaluateInDays.setEnabled(enabled);
+            spinnerEvaluateInHours.setEnabled(enabled);
+            checkBoxTrendAnalysis.setEnabled(enabled);
+            checkBoxTrendAnalysis.setEnabled(enabled);
+            textFieldTrendAnalysisName.setEnabled(enabled);
+
+            /*Registerkarten*/
+            countWordsRegisters.setEnabled(enabled);
         }
-        private void writeSettingsIntoConfigTextfile(){
+
+        /* Methode bekommt den allgemeinen Zielordner und die aktuelle URL,
+        *  zur Ermittlung des Ausgabeordners der aktuellen URL, übermittelt. Damit kann
+        *  die Ordnergröße und Anzahl Subordnern und Dateien ermittelt werden.*/
+        private HashMap<String, Double> getDirectoryDetails(String superDir, String currUrl ){
+            HashMap<String, Double> dirDetails = new HashMap<>();
+            String targetFolder = null;
+            String path = null;
+
+            if (currUrl.contains("www.")){
+                String subString = currUrl.substring(currUrl.indexOf("www."));
+                String subString2 = subString.substring(0,subString.indexOf("/"));
+                targetFolder = subString2;
+            } else if(currUrl.contains("http:") || currUrl.contains("https:")) {
+                String subString = currUrl.substring(currUrl.indexOf("://") + 3);
+                String subString2 = subString.substring(0,subString.indexOf("/"));
+                targetFolder = subString2;
+            }
+
+            path = superDir + "\\" + targetFolder;
+            File dir = new File(path);
+
+            if (dir.exists()){
+                double size = FileUtils.sizeOfDirectory(dir);
+                double sizeKB = size / 1024;
+                double sizeMB = sizeKB / 1024;
+                double sizeGB = sizeMB / 1024;
+
+                if (sizeGB > 1) {
+                    double tmp = Math.round(sizeGB * 100);
+                    sizeGB = tmp / 100;
+                    dirDetails.put("dirSizeGB", sizeGB);
+                } else {
+                    double tmp = Math.round(sizeMB * 100);
+                    sizeMB = tmp / 100;
+                    dirDetails.put("dirSizeMB", sizeMB);
+                }
+
+                int[] nrFilesAndDir = getNrOfFilesAndDirectoriesInt(dir);
+
+                if(nrFilesAndDir != null) {
+                    if (nrFilesAndDir.length == 2) {
+                        dirDetails.put("nrFiles", (double) nrFilesAndDir[0]);
+                        dirDetails.put("nrDirs", (double) nrFilesAndDir[1]);
+                    }
+                }
+
+
+                return dirDetails;
+            } else {
+                return null;
+            }
+        }
+
+        private int[] getNrOfFilesAndDirectoriesInt(File dir){
+            int[] cnt = new int[2];
+            int[] tmp;
+            if (dir.exists()) {
+                for (File file : dir.listFiles()) {
+                    if (file.isFile()){
+                        cnt[0] = cnt[0] + 1;
+                    }
+                    if (file.isDirectory()){
+                        tmp = getNrOfFilesAndDirectoriesInt(file);
+                        cnt[0] = cnt[0] + tmp[0];
+                        cnt[1] = cnt[1] + tmp[1] +1;
+                    }
+                }
+                return cnt;
+            }
+            return null;
+        }
+
+        private void startHTTrackDownload() {
+            File tempFileDownloadRunning = new File(".\\DownloadIsRunning");
+            String outputFolder = textFieldHTTrackOutputFolder.getText().replace("\\", "\\\\");
+            String wordCounterLogFilePath = outputFolder + "\\WordCounterLog.txt";
+            File wordCounterLogFile = new File(wordCounterLogFilePath);
+            final DateTimeFormatter timestampFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+            try {
+                new Thread(() -> {
+                    try (Stream<String> websiteStream = Files.lines(Paths.get(textFieldWebsiteFile.getText()))) {
+
+                        setGUIInputEnabled(false);
+                        int maxURLsTmp = 0;
+                        AtomicInteger cnt= new AtomicInteger(0);
+
+                        try(Stream<String> websiteStreamLines = Files.lines(Paths.get(textFieldWebsiteFile.getText()))) {
+                             maxURLsTmp = (int) websiteStreamLines.count();
+                        }catch (IOException ioException1){
+                            System.out.println(ioException1);
+                        }
+
+                        final int maxURLs = maxURLsTmp;
+                        boolean logFileCreatedTmp = false;
+
+                        try {
+                            logFileCreatedTmp = wordCounterLogFile.createNewFile();
+                        }catch (IOException ioException3){
+                            System.out.println("WordCounter-Logdatei nicht erstellt: " + ioException3.getMessage());
+                        }
+                        final boolean logFileCreated = logFileCreatedTmp;
+
+                        downloadProgressBar.setVisible(false);
+                        downloadProgressBar.setValue(0);
+                        downloadProgressBar.setStringPainted(true);
+                        downloadProgressBar.setMaximum(maxURLs);
+                        downloadProgressBar.setString(cnt + "/" + maxURLs);
+                        downloadProgressBar.setIndeterminate(true);
+                        downloadProgressBar.setVisible(true);
+
+                        websiteStream.forEach(url -> {
+                            try {
+                                // Build file filter
+                                String filter = null;
+                                if (radioButtonOnlyHTMLFiles.isSelected()) {
+                                    // Only HTML- and HTM-files downloaded
+                                    filter = "-*.jpg -*.png -*.gif -*.mp4 -*.ogg -*.webm"; //exclude images and videos explicitly
+                                } else if (radioButtonIncludeImages.isSelected()) {
+                                    // HTML-, HTM-, JPG- and PNG-files downloaded
+                                    filter = "+*.jpg +*.png +*.gif -*.mp4 -*.ogg -*.webm "; //include images and exclude videos explicitly
+                                } else if (radioButtonIncludeImagesAndVideos.isSelected()) {
+                                    // HTML-, HTM-, JPG-, PNG-, MP4-, OGG- and WEBM-files downloaded
+                                    filter = "+*.jpg +*.png +*.gif +*.mp4 +*.ogg +*.webm "; //include images and videos explicitly
+                                }
+
+                                String command = "\"" + textFieldHTTrackExe.getText() + "\""
+                                        //+ " -%L " + "\"" + textFieldWebsiteFile.getText() + "\""
+                                        + " --mirror " + url
+                                        + " -O "
+                                        + "\"" + textFieldHTTrackOutputFolder.getText() + "\" "
+                                        + "-w -c8 -f0 -s0 "
+                                        + "--debug-log " // Logging in Debug-Mode
+                                        + (radioButtonAllFiles.isSelected() ? "p7 " : "p1 ") // When AllFiles is selected, then download HTML-files first, then other files (p7) else only HTML-Files (p1)
+                                        + "-A100000000 -q -%v "
+                                        + "-E3600 " // Timeout for mirroring one URL => 3600 seconds
+                                        + filter; // File filters
+
+                                tempFileDownloadRunning.createNewFile();
+
+                                // Write download start to WordCounterLog
+                                if (logFileCreated) {
+                                    FileWriter logWriter = new FileWriter(wordCounterLogFilePath, true);
+                                    String timestamp = ZonedDateTime.now().format(timestampFormatter);
+                                    logWriter.write(timestamp + " - Download der Website " + url + " gestartet!\n");
+                                    logWriter.close();
+                                }
+
+                                Process runtime = Runtime.getRuntime().exec(command);
+                                Show_Output(runtime);
+
+                                // Write download end to WordCounterLog
+                                if (logFileCreated) {
+                                    FileWriter logWriter = new FileWriter(wordCounterLogFilePath, true);
+                                    String timestamp = ZonedDateTime.now().format(timestampFormatter);
+
+                                    HashMap<String, Double> dirDetails = getDirectoryDetails(outputFolder, url);
+
+                                    String dirSize = dirDetails.containsKey("dirSizeGB") ? dirDetails.get("dirSizeGB") + "GB" : dirDetails.get("dirSizeMB") + "MB";
+                                    int nrFiles = dirDetails.get("nrFiles").intValue();
+                                    int nrDirs = dirDetails.get("nrDirs").intValue();
+
+                                    logWriter.write(timestamp + " - Download der Website " + url + " abgeschlossen!\n");
+                                    logWriter.write("\tGröße: " + dirSize + "; Dateien: " + nrFiles +"; Ordner: " + nrDirs + "\n");
+                                    logWriter.close();
+                                }
+
+                                // Copy hts-log.txt for future analysis
+                                try {
+                                    String url4LogFile = url.replace(":", "").replace("//", "-").replace("/", "-");
+                                    Files.copy(new File(outputFolder + "\\hts-log.txt").toPath(),
+                                            new File(outputFolder + "\\hts-log_" + url4LogFile + ".txt").toPath(),
+                                            StandardCopyOption.REPLACE_EXISTING);
+                                } catch (IOException ioException2) {
+                                    System.out.println("Fehler beim Kopieren der Logdatei: " + ioException2.getMessage());
+                                }
+
+                            } catch (Exception ex) {
+                                System.out.println(ex.getMessage());
+                            }
+
+                            cnt.getAndIncrement();
+                            downloadProgressBar.setValue(cnt.get());
+                            downloadProgressBar.setIndeterminate(false);
+                            downloadProgressBar.setString(cnt + "/" + maxURLs);
+                        });
+
+                        setGUIInputEnabled(true);
+
+                    } catch (IOException ioException) {
+                        System.out.println(ioException.getMessage());
+                    }
+
+                }).start();
+            } catch (Exception ex) {
+                System.out.println(ex.getMessage());
+            } finally {
+                if (tempFileDownloadRunning.exists()) tempFileDownloadRunning.delete();
+            }
+        }
+
+        private void writeSettingsIntoConfigTextfile() {
             try {
                 FileWriter myWriter = new FileWriter("config.txt");
                 myWriter.write("AuszuwertenderOrdner=" + textFieldHTTrackOutputFolder.getText() + "\r\n");
                 myWriter.write("DateiMitWebseitordnern=" + textFieldEvaluationWebsites.getText() + "\r\n");
                 myWriter.write("DateiMitBegriffen=" + textFieldTermsFile.getText() + "\r\n");
-                myWriter.write("AuswertungsOrdner=" + textFieldEvaluationOutputFolder.getText() + "\r\n"); 
+                myWriter.write("AuswertungsOrdner=" + textFieldEvaluationOutputFolder.getText() + "\r\n");
                 String zeroValuesInResult = checkBoxZeroValuesInExcel.isSelected() ? "Ja" : "Nein";
                 myWriter.write("NullWerteInErgebnisMitaufnehmen=" + zeroValuesInResult + "\r\n");
                 String doTrendAnalysis = checkBoxTrendAnalysis.isSelected() ? "Ja" : "Nein";
                 myWriter.write("InDatenbankSchreiben=" + doTrendAnalysis + "\r\n");
                 myWriter.write("TrendAnalysisName=" + textFieldTrendAnalysisName.getText() + "\r\n");
                 myWriter.close();
-            } catch (IOException e) { e.printStackTrace(); }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-        private void startEvaluation(){
+
+        private void startEvaluation() {
             File tempFileEvaluationRunning = new File(".\\EvaluationIsRunning");
-            try{
+            try {
                 writeSettingsIntoConfigTextfile();
                 String command = "\"" + System.getenv("JAVA_HOME") + "\\bin\\java.exe\" -cp \".\\lib\\*\" \".\\src\\CountWords.java\"";
                 tempFileEvaluationRunning.createNewFile();
                 Process runtime = Runtime.getRuntime().exec(command);
                 Show_Output(runtime);
-            } catch (Exception ex) { 
-                System.out.println(ex.getMessage()); 
-            } finally { 
-                if(tempFileEvaluationRunning.exists()) tempFileEvaluationRunning.delete();
+            } catch (Exception ex) {
+                System.out.println(ex.getMessage());
+            } finally {
+                if (tempFileEvaluationRunning.exists()) tempFileEvaluationRunning.delete();
             }
         }
     }
-    
+
     // --------------------------------------------------
     // Event Handling Ende
     // --------------------------------------------------
@@ -856,90 +1108,97 @@ public class GUICountWords extends JFrame {
 
     private Connection conn = null;
     private Connection connWords = null;
-    private void connectToDB() {  
-        if(conn != null) return;
-        try {  
+
+    private void connectToDB() {
+        if (conn != null) return;
+        try {
             Class.forName("org.sqlite.JDBC");
-            conn = DriverManager.getConnection("jdbc:sqlite:config.db");  
-            connWords = DriverManager.getConnection("jdbc:sqlite:Words.db");  
-        } catch (Exception e) {  System.out.println(e.getMessage()); }    
+            conn = DriverManager.getConnection("jdbc:sqlite:config.db");
+            connWords = DriverManager.getConnection("jdbc:sqlite:Words.db");
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
     }
 
-    private void disconnectFromDB() {  
-        try { 
-            if (conn != null) conn.close(); 
+    private void disconnectFromDB() {
+        try {
+            if (conn != null) conn.close();
             if (connWords != null) connWords.close();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
         }
-        catch (SQLException e) { System.out.println(e.getMessage()); }
-    }  
+    }
 
-    private void LoadAllSettings(){
-        try {  
-            Statement stmt = conn.createStatement(); 
-            ResultSet rs = stmt.executeQuery("SELECT * FROM settings");  
-            String key; String value;
-            while(rs.next()){
+    private void LoadAllSettings() {
+        try {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * FROM settings");
+            String key;
+            String value;
+            while (rs.next()) {
                 key = rs.getString("key");
                 value = rs.getString("value");
-                if(key.equals("HTTrackEXE")) {
+                if (key.equals("HTTrackEXE")) {
                     textFieldHTTrackExe.setText(value);
                     chooseHTTrackExe.setSelectedFile(new File(value));
                 }
-                if(key.equals("FileWithWebsites")) {
+                if (key.equals("FileWithWebsites")) {
                     textFieldWebsiteFile.setText(value);
                     chooseWebsiteFile.setSelectedFile(new File(value));
                 }
-                if(key.equals("HTTrackOutputFolder")) {
+                if (key.equals("HTTrackOutputFolder")) {
                     textFieldHTTrackOutputFolder.setText(value);
                     chooseHTTrackOutputFolder.setSelectedFile(new File(value));
                 }
-                if(key.equals("DownloadOnlyHTMLFiles")){
-                    if(value.toLowerCase().equals("yes")){
+                if (key.equals("DownloadOnlyHTMLFiles")) {
+                    if (value.toLowerCase().equals("yes")) {
                         radioButtonOnlyHTMLFiles.setSelected(true);
                     } else {
                         radioButtonAllFiles.setSelected(true);
                     }
                 }
-                if(key.equals("DownloadCycleDays")){
+                if (key.equals("DownloadCycleDays")) {
                     spinnerDownloadInDays.setValue(Integer.parseInt(value));
                 }
-                if(key.equals("DownloadCycleHours")){
+                if (key.equals("DownloadCycleHours")) {
                     spinnerDownloadInHours.setValue(Integer.parseInt(value));
                 }
-                if(key.equals("FileWithWebsiteFolders")) {
+                if (key.equals("FileWithWebsiteFolders")) {
                     textFieldEvaluationWebsites.setText(value);
                     chooseEvaluationWebsites.setSelectedFile(new File(value));
                 }
-                if(key.equals("FileWithTerms")) {
+                if (key.equals("FileWithTerms")) {
                     textFieldTermsFile.setText(value);
                     chooseTermsFile.setSelectedFile(new File(value));
                 }
-                if(key.equals("ZeroValuesInExcel")) {
+                if (key.equals("ZeroValuesInExcel")) {
                     checkBoxZeroValuesInExcel.setSelected(value.toLowerCase().equals("yes"));
                 }
-                if(key.equals("DoTrendAnalysis")) {
+                if (key.equals("DoTrendAnalysis")) {
                     checkBoxTrendAnalysis.setSelected(value.toLowerCase().equals("yes"));
                 }
-                if(key.equals("TrendAnalysisName")) {
+                if (key.equals("TrendAnalysisName")) {
                     textFieldTrendAnalysisName.setText(value);
                 }
-                if(key.equals("EvaluationOutputFolder")) {
+                if (key.equals("EvaluationOutputFolder")) {
                     textFieldEvaluationOutputFolder.setText(value);
                     chooseEvaluationOutputFolder.setSelectedFile(new File(value));
                 }
-                if(key.equals("EvaluationCycleDays")){
+                if (key.equals("EvaluationCycleDays")) {
                     spinnerEvaluateInDays.setValue(Integer.parseInt(value));
                 }
-                if(key.equals("EvaluationCycleHours")){
+                if (key.equals("EvaluationCycleHours")) {
                     spinnerEvaluateInHours.setValue(Integer.parseInt(value));
                 }
             }
-        } catch (SQLException e) {  System.out.println(e.getMessage()); }  
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
-    private void SaveAllSettings(){
+    private void SaveAllSettings() {
         try {
-            PreparedStatement pstmt; 
+            PreparedStatement pstmt;
             pstmt = conn.prepareStatement("UPDATE Settings SET value=? WHERE key=?");
             pstmt.setString(2, "HTTrackEXE");
             pstmt.setString(1, textFieldHTTrackExe.getText());
@@ -996,29 +1255,33 @@ public class GUICountWords extends JFrame {
             pstmt.setString(2, "EvaluationCycleHours");
             pstmt.setString(1, spinnerEvaluateInHours.getValue().toString());
             pstmt.executeUpdate();
-        } catch (SQLException e) {  System.out.println(e.getMessage()); }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
-    private void searchThroughWordTable(String searchTerm, String websiteTerm, String dateFrom, String dateTo){
-        try {  
-            PreparedStatement pstmt = connWords.prepareStatement("SELECT word,number,website,date FROM Word "+ 
-                "WHERE word LIKE ? AND website LIKE ? " + 
-                "AND substr(date,7)||substr(date,4,2)||substr(date,1,2) BETWEEN ? AND ?");
+    private void searchThroughWordTable(String searchTerm, String websiteTerm, String dateFrom, String dateTo) {
+        try {
+            PreparedStatement pstmt = connWords.prepareStatement("SELECT word,number,website,date FROM Word " +
+                    "WHERE word LIKE ? AND website LIKE ? " +
+                    "AND substr(date,7)||substr(date,4,2)||substr(date,1,2) BETWEEN ? AND ?");
             pstmt.setString(1, "%" + searchTerm + "%");
             pstmt.setString(2, "%" + websiteTerm + "%");
             pstmt.setString(3, dateFrom);
             pstmt.setString(4, dateTo);
-            ResultSet rs = pstmt.executeQuery();  
-            while(rs.next()){
-                String rowData[]={
-                    rs.getString("word"),
-                    Integer.toString(rs.getInt("number")),
-                    rs.getString("website"),
-                    rs.getString("date")}; 
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                String rowData[] = {
+                        rs.getString("word"),
+                        Integer.toString(rs.getInt("number")),
+                        rs.getString("website"),
+                        rs.getString("date")};
                 modelSearchResults.addRow(rowData);
             }
 
-        } catch (SQLException e) {  System.out.println(e.getMessage()); }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     // --------------------------------------------------
